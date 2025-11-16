@@ -1,8 +1,8 @@
+
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
 import { useTheme } from "@react-navigation/native";
 
 export default function ProfileScreen() {
@@ -14,13 +14,13 @@ export default function ProfileScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
       >
-        <GlassView style={styles.profileHeader} glassEffectStyle="regular">
+        <View style={[styles.profileHeader, { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' }]}>
           <IconSymbol ios_icon_name="person.circle.fill" android_material_icon_name="person" size={24} color={theme.colors.primary} />
           <Text style={[styles.name, { color: theme.colors.text }]}>John Doe</Text>
           <Text style={[styles.email, { color: theme.dark ? '#98989D' : '#666' }]}>john.doe@example.com</Text>
-        </GlassView>
+        </View>
 
-        <GlassView style={styles.section} glassEffectStyle="regular">
+        <View style={[styles.section, { backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' }]}>
           <View style={styles.infoRow}>
             <IconSymbol ios_icon_name="phone.fill" android_material_icon_name="phone" size={24} color={theme.dark ? '#98989D' : '#666'} />
             <Text style={[styles.infoText, { color: theme.colors.text }]}>+1 (555) 123-4567</Text>
@@ -29,7 +29,7 @@ export default function ProfileScreen() {
             <IconSymbol ios_icon_name="location.fill" android_material_icon_name="location-on" size={24} color={theme.dark ? '#98989D' : '#666'} />
             <Text style={[styles.infoText, { color: theme.colors.text }]}>San Francisco, CA</Text>
           </View>
-        </GlassView>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
