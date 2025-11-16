@@ -1,15 +1,4 @@
 
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions, Modal } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useTheme } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors, commonStyles } from '@/styles/commonStyles';
-import { shoulderMuscles } from '@/data/shoulderMuscles';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { Muscle } from '@/types/anatomy';
-import * as Haptics from 'expo-haptics';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
@@ -20,9 +9,17 @@ import Animated, {
   FadeOut,
   ZoomIn,
 } from 'react-native-reanimated';
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 60) / 2;
+import { useTheme } from '@react-navigation/native';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { IconSymbol } from '@/components/IconSymbol';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions, Modal } from 'react-native';
+import { Muscle } from '@/types/anatomy';
+import { useLanguage } from '@/contexts/LanguageContext';
+import * as Haptics from 'expo-haptics';
+import { shoulderMuscles } from '@/data/shoulderMuscles';
+import { colors, commonStyles } from '@/styles/commonStyles';
 
 type CharacteristicKey = 'definition' | 'origin' | 'path' | 'termination' | 'innervation' | 'action' | 'relations' | 'clinicalApplications';
 
@@ -39,237 +36,329 @@ interface PlacedCard {
   card: AnswerCard;
 }
 
+const CARD_WIDTH = Dimensions.get('window').width - 40;
+
 export default function CardGameScreen() {
   const theme = useTheme();
-  const { t } = useLanguage();
   const params = useLocalSearchParams();
-  
+  const { t } = useLanguage();
+  const isDark = theme.dark;
+
   const [currentMuscleIndex, setCurrentMuscleIndex] = useState(0);
-  const [selectedMuscles, setSelectedMuscles] = useState<Muscle[]>([]);
-  const [answerCards, setAnswerCards] = useState<AnswerCard[]>([]);
+  const [availableCards, setAvailableCards] = useState<AnswerCard[]>([]);
   const [placedCards, setPlacedCards] = useState<PlacedCard[]>([]);
   const [selectedCard, setSelectedCard] = useState<AnswerCard | null>(null);
-  const [score, setScore] = useState(0);
-  const [gameStartTime] = useState(new Date());
-  const [showCongratsModal, setShowCongratsModal] = useState(false);
-  const [showFinalCongratsModal, setShowFinalCongratsModal] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+  const [showGameComplete, setShowGameComplete] = useState(false);
 
-  const characteristics: { key: CharacteristicKey; label: string }[] = [
-    { key: 'definition', label: t('definition') },
-    { key: 'origin', label: t('origin') },
-    { key: 'path', label: t('path') },
-    { key: 'termination', label: t('termination') },
-    { key: 'innervation', label: t('innervation') },
-    { key: 'action', label: t('action') },
-    { key: 'relations', label: t('relations') },
-    { key: 'clinicalApplications', label: t('clinicalApplications') },
-  ];
+  const scale = useSharedValue(1);
+  const rotation = useSharedValue(0);
 
   useEffect(() => {
-    console.log('CardGameScreen: Initializing game');
     initializeGame();
   }, []);
 
   const initializeGame = () => {
-    console.log('CardGameScreen: Setting up game with 5 muscles');
-    const musclesToStudy = shoulderMuscles.slice(0, 5);
-    setSelectedMuscles(musclesToStudy);
+    console.log('Initializing card game...');
+    const currentMuscle = shoulderMuscles[currentMuscleIndex];
     
-    const cards: AnswerCard[] = [];
-    musclesToStudy.forEach((muscle) => {
-      characteristics.forEach((char) => {
-        cards.push({
-          id: `${muscle.id}-${char.key}`,
-          muscleId: muscle.id,
-          characteristic: char.key,
-          content: muscle[char.key],
-          label: char.label,
-        });
-      });
-    });
-    
+    const cards: AnswerCard[] = [
+      {
+        id: `${currentMuscle.id}-definition`,
+        muscleId: currentMuscle.id,
+        characteristic: 'definition',
+        content: currentMuscle.definition,
+        label: 'Définition',
+      },
+      {
+        id: `${currentMuscle.id}-origin`,
+        muscleId: currentMuscle.id,
+        characteristic: 'origin',
+        content: currentMuscle.origin,
+        label: 'Origine',
+      },
+      {
+        id: `${currentMuscle.id}-path`,
+        muscleId: currentMuscle.id,
+        characteristic: 'path',
+        content: currentMuscle.path,
+        label: 'Trajet',
+      },
+      {
+        id: `${currentMuscle.id}-termination`,
+        muscleId: currentMuscle.id,
+        characteristic: 'termination',
+        content: currentMuscle.termination,
+        label: 'Terminaison',
+      },
+      {
+        id: `${currentMuscle.id}-innervation`,
+        muscleId: currentMuscle.id,
+        characteristic: 'innervation',
+        content: currentMuscle.innervation,
+        label: 'Innervation',
+      },
+      {
+        id: `${currentMuscle.id}-action`,
+        muscleId: currentMuscle.id,
+        characteristic: 'action',
+        content: currentMuscle.action,
+        label: 'Action',
+      },
+      {
+        id: `${currentMuscle.id}-relations`,
+        muscleId: currentMuscle.id,
+        characteristic: 'relations',
+        content: currentMuscle.relations,
+        label: 'Rapports',
+      },
+      {
+        id: `${currentMuscle.id}-clinicalApplications`,
+        muscleId: currentMuscle.id,
+        characteristic: 'clinicalApplications',
+        content: currentMuscle.clinicalApplications,
+        label: 'Applications cliniques',
+      },
+    ];
+
+    // Shuffle cards
     const shuffled = cards.sort(() => Math.random() - 0.5);
-    console.log('CardGameScreen: Created', shuffled.length, 'answer cards');
-    setAnswerCards(shuffled);
+    setAvailableCards(shuffled);
+    setPlacedCards([]);
+    setSelectedCard(null);
   };
 
   const handleCardSelect = (card: AnswerCard) => {
-    console.log('CardGameScreen: Card selected:', card.label);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    console.log('Card selected:', card.label);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setSelectedCard(card);
+    
+    scale.value = withSequence(
+      withSpring(1.1),
+      withSpring(1)
+    );
   };
 
   const handlePlaceCard = (characteristic: CharacteristicKey) => {
     if (!selectedCard) {
-      console.log('CardGameScreen: No card selected');
+      console.log('No card selected');
       return;
     }
-    
-    const currentMuscle = selectedMuscles[currentMuscleIndex];
-    const isCorrect = selectedCard.muscleId === currentMuscle.id && 
-                     selectedCard.characteristic === characteristic;
-    
-    console.log('CardGameScreen: Placing card', selectedCard.label, 'in', characteristic, '- Correct:', isCorrect);
-    
-    if (isCorrect) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      const newPlacedCards = [...placedCards, { characteristic, card: selectedCard }];
-      setPlacedCards(newPlacedCards);
-      setAnswerCards(answerCards.filter(c => c.id !== selectedCard.id));
-      setScore(score + 10);
-      
-      console.log('CardGameScreen: Placed cards:', newPlacedCards.length, '/', characteristics.length);
-      
-      // Check if muscle is complete
-      if (newPlacedCards.length === characteristics.length) {
-        console.log('CardGameScreen: Muscle complete! Current index:', currentMuscleIndex, '/', selectedMuscles.length - 1);
+
+    if (selectedCard.characteristic === characteristic) {
+      console.log('Correct placement!');
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+
+      setPlacedCards([...placedCards, { characteristic, card: selectedCard }]);
+      setAvailableCards(availableCards.filter(c => c.id !== selectedCard.id));
+      setSelectedCard(null);
+
+      rotation.value = withSequence(
+        withTiming(360, { duration: 500 }),
+        withTiming(0, { duration: 0 })
+      );
+
+      if (placedCards.length === 7) {
+        console.log('Muscle complete!');
         setTimeout(() => {
-          if (currentMuscleIndex < selectedMuscles.length - 1) {
-            // Show congratulations for completing this muscle
-            console.log('CardGameScreen: Showing muscle completion modal');
-            setShowCongratsModal(true);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          } else {
-            // Show final congratulations for completing all muscles
-            console.log('CardGameScreen: Showing final completion modal');
-            handleGameComplete();
-          }
+          setShowCongrats(true);
         }, 500);
       }
     } else {
-      console.log('CardGameScreen: Incorrect placement');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      console.log('Incorrect placement');
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
     }
-    
-    setSelectedCard(null);
   };
 
   const handleContinueToNextMuscle = () => {
-    console.log('CardGameScreen: Continuing to next muscle');
-    setShowCongratsModal(false);
-    setCurrentMuscleIndex(currentMuscleIndex + 1);
-    setPlacedCards([]);
+    console.log('Moving to next muscle...');
+    setShowCongrats(false);
+    
+    if (currentMuscleIndex < shoulderMuscles.length - 1) {
+      setCurrentMuscleIndex(currentMuscleIndex + 1);
+      setTimeout(() => {
+        initializeGame();
+      }, 300);
+    } else {
+      console.log('All muscles completed!');
+      setShowGameComplete(true);
+    }
   };
 
   const handleGameComplete = () => {
-    console.log('CardGameScreen: Game completed! Final score:', score);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setShowFinalCongratsModal(true);
-  };
-
-  const handleFinishGame = () => {
-    console.log('CardGameScreen: Finishing game and returning');
-    setShowFinalCongratsModal(false);
+    console.log('Game completed!');
+    setShowGameComplete(false);
     router.back();
   };
 
-  const currentMuscle = selectedMuscles[currentMuscleIndex];
+  const handleFinishGame = () => {
+    console.log('Finishing game early...');
+    router.back();
+  };
 
-  if (!currentMuscle) {
-    console.log('CardGameScreen: No current muscle, returning null');
-    return null;
-  }
+  const currentMuscle = shoulderMuscles[currentMuscleIndex];
+  const characteristics: CharacteristicKey[] = [
+    'definition',
+    'origin',
+    'path',
+    'termination',
+    'innervation',
+    'action',
+    'relations',
+    'clinicalApplications',
+  ];
+
+  const characteristicColors = {
+    definition: colors.cardBlue,
+    origin: colors.cardGreen,
+    path: colors.cardYellow,
+    termination: colors.cardOrange,
+    innervation: colors.cardPurple,
+    action: colors.primary,
+    relations: colors.secondary,
+    clinicalApplications: colors.accent,
+  };
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: scale.value },
+        { rotate: `${rotation.value}deg` },
+      ],
+    };
+  });
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => {
-            console.log('CardGameScreen: Back button pressed');
-            router.back();
-          }}
-          style={styles.backButton}
-        >
+    <SafeAreaView style={[styles.container, { 
+      backgroundColor: isDark ? colors.darkBackground : colors.background 
+    }]}>
+      {/* Header */}
+      <View style={[styles.header, { 
+        backgroundColor: isDark ? colors.darkCard : colors.card 
+      }]}>
+        <TouchableOpacity onPress={handleFinishGame} style={styles.backButton}>
           <IconSymbol
-            ios_icon_name="chevron.left"
-            android_material_icon_name="arrow-back"
+            ios_icon_name="xmark"
+            android_material_icon_name="close"
             size={24}
-            color={colors.text}
+            color={isDark ? '#FFFFFF' : colors.text}
           />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={[commonStyles.subtitle, styles.headerTitle]}>
-            Jeu de cartes
+        <View style={styles.headerContent}>
+          <Text style={[styles.muscleName, { 
+            color: isDark ? '#FFFFFF' : colors.text 
+          }]}>
+            {currentMuscle.name}
           </Text>
-          <Text style={[commonStyles.textSecondary, styles.headerSubtitle]}>
-            Muscle {currentMuscleIndex + 1}/{selectedMuscles.length}
+          <Text style={[styles.progress, { color: colors.textSecondary }]}>
+            Muscle {currentMuscleIndex + 1} / {shoulderMuscles.length}
           </Text>
         </View>
         <View style={styles.scoreContainer}>
-          <Text style={[commonStyles.textBold, styles.scoreText]}>{score}</Text>
+          <IconSymbol
+            ios_icon_name="star.fill"
+            android_material_icon_name="star"
+            size={20}
+            color={colors.cardYellow}
+          />
+          <Text style={[styles.score, { 
+            color: isDark ? '#FFFFFF' : colors.text 
+          }]}>
+            {placedCards.length}/8
+          </Text>
         </View>
       </View>
 
-      <ScrollView
-        style={styles.container}
+      <ScrollView 
+        style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
-          <View 
-            style={[
-              styles.progressFill, 
-              { 
-                backgroundColor: colors.primary,
-                width: `${((currentMuscleIndex * characteristics.length + placedCards.length) / (selectedMuscles.length * characteristics.length)) * 100}%`
-              }
-            ]} 
-          />
-        </View>
-
-        <View style={[styles.referenceCard, { backgroundColor: colors.card }]}>
-          <View style={[styles.referenceHeader, { backgroundColor: colors.primary }]}>
+        {/* Game Board - Central muscle card with surrounding slots */}
+        <View style={styles.gameBoard}>
+          <View style={[styles.muscleCenterCard, {
+            backgroundColor: isDark ? colors.darkCard : colors.card,
+          }]}>
             <IconSymbol
-              ios_icon_name="figure.arms.open"
-              android_material_icon_name="accessibility"
-              size={24}
-              color="#FFFFFF"
+              ios_icon_name="heart.fill"
+              android_material_icon_name="favorite"
+              size={48}
+              color={colors.primary}
             />
-            <Text style={[commonStyles.subtitle, styles.referenceTitle]}>
+            <Text style={[styles.muscleCenterText, { 
+              color: isDark ? '#FFFFFF' : colors.text 
+            }]}>
               {currentMuscle.name}
             </Text>
           </View>
-          
-          <View style={styles.gameBoard}>
+
+          {/* Characteristic slots arranged around the center */}
+          <View style={styles.slotsContainer}>
             {characteristics.map((char, index) => {
-              const placedCard = placedCards.find(p => p.characteristic === char.key);
+              const placedCard = placedCards.find(p => p.characteristic === char);
+              const charColor = characteristicColors[char];
               
               return (
                 <TouchableOpacity
-                  key={index}
+                  key={char}
                   style={[
                     styles.slot,
-                    { backgroundColor: placedCard ? colors.success + '20' : colors.border },
-                    selectedCard && !placedCard && styles.slotActive,
+                    {
+                      backgroundColor: placedCard 
+                        ? charColor + '20'
+                        : isDark ? colors.darkCard : colors.card,
+                      borderColor: placedCard ? charColor : colors.border,
+                      borderWidth: 2,
+                    }
                   ]}
-                  onPress={() => selectedCard && !placedCard && handlePlaceCard(char.key)}
-                  disabled={!selectedCard || !!placedCard}
+                  onPress={() => handlePlaceCard(char)}
                   activeOpacity={0.7}
                 >
-                  <Text style={[commonStyles.textBold, styles.slotLabel]}>
-                    {char.label}
-                  </Text>
                   {placedCard ? (
-                    <View style={styles.placedCardContent}>
-                      <IconSymbol
-                        ios_icon_name="checkmark.circle.fill"
-                        android_material_icon_name="check-circle"
-                        size={20}
-                        color={colors.success}
-                      />
-                      <Text style={[commonStyles.textSecondary, styles.placedText]} numberOfLines={2}>
-                        {placedCard.card.content}
+                    <Animated.View 
+                      entering={ZoomIn.duration(300)}
+                      style={styles.placedCardContent}
+                    >
+                      <View style={[styles.placedCardIcon, { backgroundColor: charColor }]}>
+                        <IconSymbol
+                          ios_icon_name="checkmark"
+                          android_material_icon_name="check"
+                          size={16}
+                          color="#FFFFFF"
+                        />
+                      </View>
+                      <Text style={[styles.slotLabel, { color: charColor }]}>
+                        {placedCard.card.label}
                       </Text>
-                    </View>
+                    </Animated.View>
                   ) : (
-                    <View style={styles.emptySlot}>
-                      <IconSymbol
-                        ios_icon_name="plus.circle"
-                        android_material_icon_name="add-circle-outline"
-                        size={32}
-                        color={colors.textSecondary}
-                      />
+                    <View style={styles.emptySlotContent}>
+                      <View style={[styles.emptySlotIcon, { 
+                        borderColor: isDark ? colors.darkBorder : colors.border 
+                      }]}>
+                        <IconSymbol
+                          ios_icon_name="plus"
+                          android_material_icon_name="add"
+                          size={20}
+                          color={colors.textSecondary}
+                        />
+                      </View>
+                      <Text style={[styles.slotLabel, { color: colors.textSecondary }]}>
+                        {char === 'definition' && 'Définition'}
+                        {char === 'origin' && 'Origine'}
+                        {char === 'path' && 'Trajet'}
+                        {char === 'termination' && 'Terminaison'}
+                        {char === 'innervation' && 'Innervation'}
+                        {char === 'action' && 'Action'}
+                        {char === 'relations' && 'Rapports'}
+                        {char === 'clinicalApplications' && 'Applications'}
+                      </Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -278,56 +367,79 @@ export default function CardGameScreen() {
           </View>
         </View>
 
+        {/* Available Cards */}
         <View style={styles.cardsSection}>
-          <Text style={[commonStyles.subtitle, styles.sectionTitle]}>
-            Cartes réponses
+          <Text style={[styles.sectionTitle, { 
+            color: isDark ? '#FFFFFF' : colors.text 
+          }]}>
+            Cartes disponibles
           </Text>
-          <Text style={[commonStyles.textSecondary, styles.sectionSubtitle]}>
-            Sélectionnez une carte et placez-la dans la bonne case
-          </Text>
-          
-          <View style={styles.cardsGrid}>
-            {answerCards.map((card, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.answerCard,
-                  { backgroundColor: colors.card },
-                  selectedCard?.id === card.id && styles.answerCardSelected,
-                ]}
-                onPress={() => handleCardSelect(card)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.cardHeader, { backgroundColor: colors.secondary + '20' }]}>
-                  <Text style={[commonStyles.textBold, styles.cardLabel]}>
-                    {card.label}
-                  </Text>
-                </View>
-                <Text style={[commonStyles.textSecondary, styles.cardContent]} numberOfLines={3}>
-                  {card.content}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cardsContainer}
+          >
+            {availableCards.map((card) => {
+              const isSelected = selectedCard?.id === card.id;
+              const cardColor = characteristicColors[card.characteristic];
+              
+              return (
+                <TouchableOpacity
+                  key={card.id}
+                  onPress={() => handleCardSelect(card)}
+                  activeOpacity={0.8}
+                >
+                  <Animated.View
+                    style={[
+                      styles.answerCard,
+                      {
+                        backgroundColor: isDark ? colors.darkCard : colors.card,
+                        borderColor: isSelected ? cardColor : colors.border,
+                        borderWidth: isSelected ? 3 : 1,
+                        boxShadow: isSelected 
+                          ? `0px 8px 24px ${cardColor}40`
+                          : '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                      },
+                      isSelected && animatedStyle,
+                    ]}
+                  >
+                    <View style={[styles.cardHeader, { 
+                      backgroundColor: cardColor + '20',
+                      borderBottomColor: cardColor + '40',
+                      borderBottomWidth: 1,
+                    }]}>
+                      <Text style={[styles.cardLabel, { color: cardColor }]}>
+                        {card.label}
+                      </Text>
+                    </View>
+                    <Text style={[styles.cardContent, { 
+                      color: isDark ? '#FFFFFF' : colors.text 
+                    }]} numberOfLines={4}>
+                      {card.content}
+                    </Text>
+                  </Animated.View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
       </ScrollView>
 
-      {/* Congratulations Modal for completing a muscle */}
+      {/* Congratulations Modal */}
       <Modal
-        visible={showCongratsModal}
+        visible={showCongrats}
         transparent
         animationType="fade"
-        onRequestClose={() => {
-          console.log('CardGameScreen: Congrats modal close requested');
-          setShowCongratsModal(false);
-        }}
+        onRequestClose={() => setShowCongrats(false)}
       >
         <View style={styles.modalOverlay}>
           <Animated.View 
             entering={ZoomIn.duration(400)}
-            style={[styles.modalContent, { backgroundColor: colors.card }]}
+            style={[styles.modalContent, {
+              backgroundColor: isDark ? colors.darkCard : colors.card,
+            }]}
           >
-            <View style={[styles.modalIconContainer, { backgroundColor: colors.success + '20' }]}>
+            <View style={[styles.modalIcon, { backgroundColor: colors.success + '20' }]}>
               <IconSymbol
                 ios_icon_name="checkmark.circle.fill"
                 android_material_icon_name="check-circle"
@@ -335,121 +447,63 @@ export default function CardGameScreen() {
                 color={colors.success}
               />
             </View>
-            
-            <Text style={[commonStyles.title, styles.modalTitle]}>
+            <Text style={[styles.modalTitle, { 
+              color: isDark ? '#FFFFFF' : colors.text 
+            }]}>
               Félicitations ! 🎉
             </Text>
-            
-            <Text style={[commonStyles.text, styles.modalText]}>
-              Vous avez complété le muscle {currentMuscle.name} avec succès !
+            <Text style={[styles.modalText, { color: colors.textSecondary }]}>
+              Vous avez complété toutes les caractéristiques de {currentMuscle.name} !
             </Text>
-            
-            <View style={styles.modalStats}>
-              <View style={styles.statItem}>
-                <Text style={[commonStyles.textBold, styles.statValue]}>{characteristics.length}</Text>
-                <Text style={commonStyles.textSecondary}>Cartes placées</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[commonStyles.textBold, styles.statValue]}>{score}</Text>
-                <Text style={commonStyles.textSecondary}>Points</Text>
-              </View>
-            </View>
-            
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: colors.primary }]}
               onPress={handleContinueToNextMuscle}
-              activeOpacity={0.8}
             >
               <Text style={styles.modalButtonText}>
-                Continuer au muscle suivant
+                {currentMuscleIndex < shoulderMuscles.length - 1 
+                  ? 'Muscle suivant' 
+                  : 'Terminer'}
               </Text>
-              <IconSymbol
-                ios_icon_name="arrow.right"
-                android_material_icon_name="arrow-forward"
-                size={20}
-                color="#FFFFFF"
-              />
             </TouchableOpacity>
           </Animated.View>
         </View>
       </Modal>
 
-      {/* Final Congratulations Modal for completing all muscles */}
+      {/* Game Complete Modal */}
       <Modal
-        visible={showFinalCongratsModal}
+        visible={showGameComplete}
         transparent
         animationType="fade"
-        onRequestClose={() => {
-          console.log('CardGameScreen: Final congrats modal close requested');
-          setShowFinalCongratsModal(false);
-        }}
+        onRequestClose={() => setShowGameComplete(false)}
       >
         <View style={styles.modalOverlay}>
           <Animated.View 
             entering={ZoomIn.duration(400)}
-            style={[styles.modalContent, { backgroundColor: colors.card }]}
+            style={[styles.modalContent, {
+              backgroundColor: isDark ? colors.darkCard : colors.card,
+            }]}
           >
-            <View style={[styles.modalIconContainer, { backgroundColor: colors.accent + '20' }]}>
-              <IconSymbol
-                ios_icon_name="star.fill"
-                android_material_icon_name="star"
-                size={64}
-                color={colors.accent}
-              />
-            </View>
-            
-            <Text style={[commonStyles.title, styles.modalTitle]}>
-              Bravo ! Module terminé ! 🏆
-            </Text>
-            
-            <Text style={[commonStyles.text, styles.modalText]}>
-              Vous avez complété tous les muscles de l&apos;épaule avec succès !
-            </Text>
-            
-            <View style={styles.modalStats}>
-              <View style={styles.statItem}>
-                <Text style={[commonStyles.textBold, styles.statValue]}>{selectedMuscles.length}</Text>
-                <Text style={commonStyles.textSecondary}>Muscles maîtrisés</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[commonStyles.textBold, styles.statValue]}>{score}</Text>
-                <Text style={commonStyles.textSecondary}>Score total</Text>
-              </View>
-            </View>
-
-            <View style={[styles.achievementBanner, { backgroundColor: colors.highlight + '20' }]}>
+            <View style={[styles.modalIcon, { backgroundColor: colors.cardYellow + '20' }]}>
               <IconSymbol
                 ios_icon_name="trophy.fill"
                 android_material_icon_name="emoji-events"
-                size={32}
-                color={colors.accent}
+                size={64}
+                color={colors.cardYellow}
               />
-              <View style={styles.achievementText}>
-                <Text style={[commonStyles.textBold, styles.achievementTitle]}>
-                  Nouveau badge débloqué !
-                </Text>
-                <Text style={commonStyles.textSecondary}>
-                  Expert de l&apos;épaule
-                </Text>
-              </View>
             </View>
-            
+            <Text style={[styles.modalTitle, { 
+              color: isDark ? '#FFFFFF' : colors.text 
+            }]}>
+              Bravo ! 🏆
+            </Text>
+            <Text style={[styles.modalText, { color: colors.textSecondary }]}>
+              Vous avez terminé tous les muscles de l&apos;épaule ! Excellent travail !
+            </Text>
             <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: colors.accent }]}
-              onPress={handleFinishGame}
-              activeOpacity={0.8}
+              style={[styles.modalButton, { backgroundColor: colors.primary }]}
+              onPress={handleGameComplete}
             >
-              <Text style={styles.modalButtonText}>
-                Terminer
-              </Text>
-              <IconSymbol
-                ios_icon_name="checkmark"
-                android_material_icon_name="check"
-                size={20}
-                color="#FFFFFF"
-              />
+              <Text style={styles.modalButtonText}>Retour à l&apos;accueil</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -459,163 +513,156 @@ export default function CardGameScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    padding: 16,
     paddingTop: Platform.OS === 'android' ? 48 : 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 4,
   },
   backButton: {
     width: 40,
     height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    marginBottom: 0,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  scoreContainer: {
-    width: 50,
-    height: 40,
-    backgroundColor: colors.primary + '20',
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scoreText: {
-    color: colors.primary,
-    fontSize: 18,
+  headerContent: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
   },
-  container: {
+  muscleName: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  progress: {
+    fontSize: 13,
+  },
+  scoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: colors.cardYellow + '20',
+  },
+  score: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  content: {
     flex: 1,
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 120,
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 3,
-    marginBottom: 20,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  referenceCard: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 24,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-    elevation: 4,
-  },
-  referenceHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  referenceTitle: {
-    color: '#FFFFFF',
-    marginBottom: 0,
+    paddingBottom: 40,
   },
   gameBoard: {
-    padding: 16,
-    gap: 12,
+    alignItems: 'center',
+    marginBottom: 32,
   },
-  slot: {
-    borderRadius: 12,
-    padding: 12,
-    minHeight: 80,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  slotActive: {
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
-  },
-  slotLabel: {
-    fontSize: 14,
-    marginBottom: 8,
-    color: colors.text,
-  },
-  emptySlot: {
+  muscleCenterCard: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  placedCardContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     gap: 8,
+    boxShadow: '0px 8px 24px rgba(3, 169, 244, 0.2)',
+    elevation: 8,
+    marginBottom: 24,
   },
-  placedText: {
-    flex: 1,
-    fontSize: 13,
+  muscleCenterText: {
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
-  cardsSection: {
-    marginTop: 8,
-  },
-  sectionTitle: {
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    marginBottom: 16,
-  },
-  cardsGrid: {
+  slotsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: 12,
+    maxWidth: CARD_WIDTH,
   },
-  answerCard: {
-    width: CARD_WIDTH,
+  slot: {
+    width: (CARD_WIDTH - 36) / 2,
+    minHeight: 80,
     borderRadius: 12,
     padding: 12,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
-    elevation: 2,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  answerCardSelected: {
-    borderColor: colors.primary,
-    boxShadow: '0px 4px 12px rgba(3, 169, 244, 0.3)',
-    elevation: 6,
+  placedCardContent: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  placedCardIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptySlotContent: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptySlotIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  cardsSection: {
+    gap: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  cardsContainer: {
+    gap: 16,
+    paddingRight: 20,
+  },
+  answerCard: {
+    width: CARD_WIDTH * 0.7,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
   },
   cardHeader: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginBottom: 8,
+    padding: 12,
   },
   cardLabel: {
-    fontSize: 12,
-    color: colors.secondary,
+    fontSize: 14,
+    fontWeight: '700',
     textAlign: 'center',
   },
   cardContent: {
-    fontSize: 12,
-    lineHeight: 16,
+    padding: 16,
+    fontSize: 13,
+    lineHeight: 20,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     padding: 20,
   },
   modalContent: {
@@ -624,82 +671,37 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',
-    boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.3)',
-    elevation: 10,
+    gap: 20,
+    boxShadow: '0px 16px 48px rgba(0, 0, 0, 0.3)',
+    elevation: 12,
   },
-  modalIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  modalIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
   },
   modalTitle: {
+    fontSize: 28,
+    fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 12,
   },
   modalText: {
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
-  },
-  modalStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginBottom: 24,
-    padding: 16,
-    backgroundColor: colors.border,
-    borderRadius: 12,
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 28,
-    color: colors.primary,
-    marginBottom: 4,
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: colors.textSecondary,
-    opacity: 0.3,
-  },
-  achievementBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    width: '100%',
-    marginBottom: 24,
-    gap: 16,
-  },
-  achievementText: {
-    flex: 1,
-  },
-  achievementTitle: {
     fontSize: 16,
-    marginBottom: 4,
+    textAlign: 'center',
+    lineHeight: 24,
   },
   modalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
     width: '100%',
-    gap: 8,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
-    elevation: 5,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
   },
   modalButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
   },
 });

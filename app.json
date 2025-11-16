@@ -1,35 +1,37 @@
 
 {
   "expo": {
-    "name": "Anatomy Trainer",
-    "slug": "anatomy-trainer",
+    "name": "Abinarth Formation",
+    "slug": "abinarth-formation",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
+    "icon": "./assets/images/efaec100-f453-40a0-ac5b-6ba85628e3ad.jpeg",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
+      "image": "./assets/images/efaec100-f453-40a0-ac5b-6ba85628e3ad.jpeg",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#0a0e27"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.abinarth.formation",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "icon": "./assets/images/efaec100-f453-40a0-ac5b-6ba85628e3ad.jpeg"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
-        "backgroundColor": "#1a1a2e"
+        "foregroundImage": "./assets/images/efaec100-f453-40a0-ac5b-6ba85628e3ad.jpeg",
+        "backgroundColor": "#0a0e27"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.abinarth.formation"
+      "package": "com.abinarth.formation",
+      "icon": "./assets/images/efaec100-f453-40a0-ac5b-6ba85628e3ad.jpeg"
     },
     "web": {
-      "favicon": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
+      "favicon": "./assets/images/efaec100-f453-40a0-ac5b-6ba85628e3ad.jpeg",
       "bundler": "metro"
     },
     "plugins": [
@@ -38,7 +40,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#1a1a2e",
+          "backgroundColor": "#0a0e27",
           "imageWidth": 200
         }
       ]
