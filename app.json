@@ -1,16 +1,17 @@
+
 {
   "expo": {
     "name": "Anatomy Trainer",
     "slug": "Anatomy Trainer",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/natively-dark.png",
+    "icon": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/natively-dark.png",
+      "image": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#1a1a2e"
     },
     "ios": {
       "supportsTablet": true,
@@ -21,14 +22,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/natively-dark.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
+        "backgroundColor": "#1a1a2e"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.Natively"
     },
     "web": {
-      "favicon": "./assets/images/final_quest_240x240.png",
+      "favicon": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
       "bundler": "metro"
     },
     "plugins": [

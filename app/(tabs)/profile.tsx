@@ -4,13 +4,23 @@ import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from "
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "@react-navigation/native";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSupabase } from "@/contexts/SupabaseContext";
 import { IconSymbol } from "@/components/IconSymbol";
 import { colors, commonStyles } from "@/styles/commonStyles";
+import { router } from "expo-router";
 
 export default function ProfileScreen() {
   const theme = useTheme();
   const { t, language, setLanguage } = useLanguage();
+  const { user, isAuthenticated, signOut } = useSupabase();
   const [darkMode, setDarkMode] = useState(false);
+
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      console.error('Sign out error:', error);
+    }
+  };
 
   const settingsOptions = [
     {
@@ -62,11 +72,21 @@ export default function ProfileScreen() {
             />
           </View>
           <Text style={[commonStyles.subtitle, styles.userName, { color: theme.colors.text }]}>
-            Utilisateur
+            {isAuthenticated ? (user?.email?.split('@')[0] || 'User') : 'Guest'}
           </Text>
           <Text style={[commonStyles.textSecondary, styles.userEmail]}>
-            utilisateur@example.com
+            {isAuthenticated ? user?.email : 'Not signed in'}
           </Text>
+          
+          {!isAuthenticated && (
+            <TouchableOpacity
+              style={[styles.signInButton, { backgroundColor: colors.primary }]}
+              onPress={() => router.push('/auth')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.signInButtonText}>Sign In with Supabase</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -138,21 +158,23 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={[styles.logoutButton, { backgroundColor: colors.error + '15' }]}
-          onPress={() => console.log('Logout pressed')}
-          activeOpacity={0.7}
-        >
-          <IconSymbol
-            ios_icon_name="arrow.right.square.fill"
-            android_material_icon_name="logout"
-            size={24}
-            color={colors.error}
-          />
-          <Text style={[commonStyles.textBold, styles.logoutText, { color: colors.error }]}>
-            {t('logout')}
-          </Text>
-        </TouchableOpacity>
+        {isAuthenticated && (
+          <TouchableOpacity
+            style={[styles.logoutButton, { backgroundColor: colors.error + '15' }]}
+            onPress={handleSignOut}
+            activeOpacity={0.7}
+          >
+            <IconSymbol
+              ios_icon_name="arrow.right.square.fill"
+              android_material_icon_name="logout"
+              size={24}
+              color={colors.error}
+            />
+            <Text style={[commonStyles.textBold, styles.logoutText, { color: colors.error }]}>
+              {t('logout')}
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -197,6 +219,18 @@ const styles = StyleSheet.create({
   },
   userEmail: {
     fontSize: 14,
+    marginBottom: 16,
+  },
+  signInButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  signInButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   section: {
     marginBottom: 24,
