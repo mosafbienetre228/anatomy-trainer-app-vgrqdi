@@ -10,14 +10,37 @@ import { shoulderMuscles } from '@/data/shoulderMuscles';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function MuscleListScreen() {
+  console.log('MuscleListScreen: Rendering');
+  
   const theme = useTheme();
+  console.log('MuscleListScreen: Theme loaded', theme?.colors?.background);
+  
   const { t } = useLanguage();
+  console.log('MuscleListScreen: Language context loaded');
+
+  console.log('MuscleListScreen: Shoulder muscles count:', shoulderMuscles?.length);
+
+  if (!shoulderMuscles || shoulderMuscles.length === 0) {
+    console.error('MuscleListScreen: No shoulder muscles data available');
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
+        <View style={styles.errorContainer}>
+          <Text style={[commonStyles.subtitle, { color: theme.colors.text }]}>
+            Erreur: Données non disponibles
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={[styles.header, { backgroundColor: theme.colors.background }]}>
         <TouchableOpacity 
-          onPress={() => router.back()}
+          onPress={() => {
+            console.log('MuscleListScreen: Back button pressed');
+            router.back();
+          }}
           style={styles.backButton}
         >
           <IconSymbol
@@ -52,7 +75,10 @@ export default function MuscleListScreen() {
 
         <TouchableOpacity
           style={[styles.gameButton, { backgroundColor: colors.secondary }]}
-          onPress={() => router.push('/card-game')}
+          onPress={() => {
+            console.log('MuscleListScreen: Start game button pressed');
+            router.push('/card-game');
+          }}
           activeOpacity={0.8}
         >
           <View style={styles.gameButtonContent}>
@@ -87,38 +113,48 @@ export default function MuscleListScreen() {
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
-        {shoulderMuscles.map((muscle, index) => (
-          <React.Fragment key={`muscle-${index}`}>
-            <TouchableOpacity
-              style={[styles.muscleCard, { backgroundColor: theme.colors.card }]}
-              onPress={() => router.push(`/muscle-detail?id=${muscle.id}` as any)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.muscleIcon, { backgroundColor: colors.secondary + '20' }]}>
+        {shoulderMuscles.map((muscle, index) => {
+          if (!muscle || !muscle.id) {
+            console.error('MuscleListScreen: Invalid muscle data at index', index);
+            return null;
+          }
+          
+          return (
+            <React.Fragment key={`muscle-${index}`}>
+              <TouchableOpacity
+                style={[styles.muscleCard, { backgroundColor: theme.colors.card }]}
+                onPress={() => {
+                  console.log('MuscleListScreen: Muscle card pressed:', muscle.id);
+                  router.push(`/muscle-detail?id=${muscle.id}` as any);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.muscleIcon, { backgroundColor: colors.secondary + '20' }]}>
+                  <IconSymbol
+                    ios_icon_name="figure.arms.open"
+                    android_material_icon_name="accessibility"
+                    size={28}
+                    color={colors.secondary}
+                  />
+                </View>
+                <View style={styles.muscleContent}>
+                  <Text style={[commonStyles.subtitle, styles.muscleName, { color: theme.colors.text }]}>
+                    {muscle.name || 'Nom inconnu'}
+                  </Text>
+                  <Text style={[commonStyles.textSecondary, styles.muscleDefinition]} numberOfLines={2}>
+                    {muscle.definition || 'Définition non disponible'}
+                  </Text>
+                </View>
                 <IconSymbol
-                  ios_icon_name="figure.arms.open"
-                  android_material_icon_name="accessibility"
-                  size={28}
-                  color={colors.secondary}
+                  ios_icon_name="chevron.right"
+                  android_material_icon_name="chevron-right"
+                  size={24}
+                  color={colors.textSecondary}
                 />
-              </View>
-              <View style={styles.muscleContent}>
-                <Text style={[commonStyles.subtitle, styles.muscleName, { color: theme.colors.text }]}>
-                  {muscle.name}
-                </Text>
-                <Text style={[commonStyles.textSecondary, styles.muscleDefinition]} numberOfLines={2}>
-                  {muscle.definition}
-                </Text>
-              </View>
-              <IconSymbol
-                ios_icon_name="chevron.right"
-                android_material_icon_name="chevron-right"
-                size={24}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </React.Fragment>
-        ))}
+              </TouchableOpacity>
+            </React.Fragment>
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -234,5 +270,11 @@ const styles = StyleSheet.create({
   },
   muscleDefinition: {
     fontSize: 13,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
 });

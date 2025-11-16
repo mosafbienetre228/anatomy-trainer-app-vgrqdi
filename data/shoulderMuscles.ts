@@ -198,3 +198,5 @@ export const shoulderMuscles: Muscle[] = [
     clinicalApplications: 'Rarement lésé isolément, point de repère anatomique',
   },
 ];
+
+console.log('shoulderMuscles.ts: Exported', shoulderMuscles.length, 'muscles');

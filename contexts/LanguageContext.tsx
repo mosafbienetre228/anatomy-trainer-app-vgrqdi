@@ -14,7 +14,16 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    console.error('useLanguage must be used within a LanguageProvider');
+    // Return a fallback instead of throwing to prevent crashes
+    return {
+      language: 'fr' as Language,
+      setLanguage: () => console.warn('setLanguage called outside LanguageProvider'),
+      t: (key: string) => {
+        console.warn(`Translation requested for "${key}" outside LanguageProvider`);
+        return key;
+      },
+    };
   }
   return context;
 };
@@ -90,16 +99,27 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>('fr');
 
   const t = (key: string): string => {
-    const translation = translations[language][key];
-    if (!translation) {
-      console.warn(`Translation missing for key: ${key} in language: ${language}`);
+    try {
+      const translation = translations[language]?.[key];
+      if (!translation) {
+        console.warn(`Translation missing for key: "${key}" in language: "${language}"`);
+        return key;
+      }
+      return translation;
+    } catch (error) {
+      console.error(`Error getting translation for key: "${key}"`, error);
       return key;
     }
-    return translation;
+  };
+
+  const value: LanguageContextType = {
+    language,
+    setLanguage,
+    t,
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );
