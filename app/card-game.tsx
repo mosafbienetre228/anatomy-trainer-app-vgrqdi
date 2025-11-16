@@ -8,13 +8,14 @@ import Animated, {
   FadeIn,
   FadeOut,
   ZoomIn,
+  SlideInDown,
 } from 'react-native-reanimated';
 import { useTheme } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { IconSymbol } from '@/components/IconSymbol';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions, Modal, Image } from 'react-native';
 import { Muscle } from '@/types/anatomy';
 import { useLanguage } from '@/contexts/LanguageContext';
 import * as Haptics from 'expo-haptics';
@@ -37,6 +38,7 @@ interface PlacedCard {
 }
 
 const CARD_WIDTH = Dimensions.get('window').width - 40;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function CardGameScreen() {
   const theme = useTheme();
@@ -53,10 +55,17 @@ export default function CardGameScreen() {
 
   const scale = useSharedValue(1);
   const rotation = useSharedValue(0);
+  const muscleImageOpacity = useSharedValue(0);
 
   useEffect(() => {
     initializeGame();
   }, []);
+
+  useEffect(() => {
+    // Animate muscle image opacity based on progress
+    const progress = placedCards.length / 8;
+    muscleImageOpacity.value = withSpring(progress);
+  }, [placedCards.length]);
 
   const initializeGame = () => {
     console.log('Initializing card game...');
@@ -121,11 +130,18 @@ export default function CardGameScreen() {
       },
     ];
 
-    // Shuffle cards
-    const shuffled = cards.sort(() => Math.random() - 0.5);
+    // Shuffle cards using Fisher-Yates algorithm for better randomization
+    const shuffled = [...cards];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    console.log('Cards shuffled:', shuffled.map(c => c.label));
     setAvailableCards(shuffled);
     setPlacedCards([]);
     setSelectedCard(null);
+    muscleImageOpacity.value = 0;
   };
 
   const handleCardSelect = (card: AnswerCard) => {
@@ -225,6 +241,17 @@ export default function CardGameScreen() {
     clinicalApplications: colors.accent,
   };
 
+  const characteristicIcons = {
+    definition: { ios: 'book.fill', android: 'menu-book' },
+    origin: { ios: 'arrow.up.circle.fill', android: 'arrow-upward' },
+    path: { ios: 'arrow.right.circle.fill', android: 'arrow-forward' },
+    termination: { ios: 'arrow.down.circle.fill', android: 'arrow-downward' },
+    innervation: { ios: 'bolt.fill', android: 'flash-on' },
+    action: { ios: 'figure.walk', android: 'directions-run' },
+    relations: { ios: 'link.circle.fill', android: 'link' },
+    clinicalApplications: { ios: 'cross.case.fill', android: 'local-hospital' },
+  };
+
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -233,6 +260,14 @@ export default function CardGameScreen() {
       ],
     };
   });
+
+  const muscleImageStyle = useAnimatedStyle(() => {
+    return {
+      opacity: muscleImageOpacity.value,
+    };
+  });
+
+  const progressPercentage = Math.round((placedCards.length / 8) * 100);
 
   return (
     <SafeAreaView style={[styles.container, { 
@@ -280,21 +315,79 @@ export default function CardGameScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Progress Bar */}
+        <View style={styles.progressBarContainer}>
+          <View style={[styles.progressBarBackground, {
+            backgroundColor: isDark ? colors.darkCard : colors.card,
+          }]}>
+            <Animated.View 
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${progressPercentage}%`,
+                  backgroundColor: colors.primary,
+                }
+              ]}
+            />
+          </View>
+          <Text style={[styles.progressText, { 
+            color: isDark ? '#FFFFFF' : colors.text 
+          }]}>
+            {progressPercentage}% complété
+          </Text>
+        </View>
+
+        {/* Muscle Image Formation - Shows as cards are placed */}
+        <Animated.View style={[styles.muscleImageContainer, muscleImageStyle]}>
+          <View style={[styles.muscleImageCard, {
+            backgroundColor: isDark ? colors.darkCard : colors.card,
+          }]}>
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?w=400&h=400&fit=crop' }}
+              style={styles.muscleImage}
+              resizeMode="cover"
+            />
+            <View style={styles.muscleImageOverlay}>
+              <IconSymbol
+                ios_icon_name="heart.fill"
+                android_material_icon_name="favorite"
+                size={64}
+                color={colors.primary}
+              />
+              <Text style={[styles.muscleImageText, { 
+                color: isDark ? '#FFFFFF' : colors.text 
+              }]}>
+                {currentMuscle.name}
+              </Text>
+              <Text style={[styles.muscleImageSubtext, { color: colors.textSecondary }]}>
+                Anatomie complète
+              </Text>
+            </View>
+          </View>
+        </Animated.View>
+
         {/* Game Board - Central muscle card with surrounding slots */}
         <View style={styles.gameBoard}>
           <View style={[styles.muscleCenterCard, {
             backgroundColor: isDark ? colors.darkCard : colors.card,
           }]}>
-            <IconSymbol
-              ios_icon_name="heart.fill"
-              android_material_icon_name="favorite"
-              size={48}
-              color={colors.primary}
-            />
+            <View style={[styles.muscleCenterIcon, {
+              backgroundColor: colors.primary + '20',
+            }]}>
+              <IconSymbol
+                ios_icon_name="heart.fill"
+                android_material_icon_name="favorite"
+                size={48}
+                color={colors.primary}
+              />
+            </View>
             <Text style={[styles.muscleCenterText, { 
               color: isDark ? '#FFFFFF' : colors.text 
             }]}>
               {currentMuscle.name}
+            </Text>
+            <Text style={[styles.muscleCenterSubtext, { color: colors.textSecondary }]}>
+              {currentMuscle.region}
             </Text>
           </View>
 
@@ -303,6 +396,7 @@ export default function CardGameScreen() {
             {characteristics.map((char, index) => {
               const placedCard = placedCards.find(p => p.characteristic === char);
               const charColor = characteristicColors[char];
+              const charIcon = characteristicIcons[char];
               
               return (
                 <TouchableOpacity
@@ -343,8 +437,8 @@ export default function CardGameScreen() {
                         borderColor: isDark ? colors.darkBorder : colors.border 
                       }]}>
                         <IconSymbol
-                          ios_icon_name="plus"
-                          android_material_icon_name="add"
+                          ios_icon_name={charIcon.ios}
+                          android_material_icon_name={charIcon.android}
                           size={20}
                           color={colors.textSecondary}
                         />
@@ -369,19 +463,29 @@ export default function CardGameScreen() {
 
         {/* Available Cards */}
         <View style={styles.cardsSection}>
-          <Text style={[styles.sectionTitle, { 
-            color: isDark ? '#FFFFFF' : colors.text 
-          }]}>
-            Cartes disponibles
-          </Text>
+          <View style={styles.cardsSectionHeader}>
+            <Text style={[styles.sectionTitle, { 
+              color: isDark ? '#FFFFFF' : colors.text 
+            }]}>
+              Cartes disponibles
+            </Text>
+            <View style={[styles.cardCountBadge, {
+              backgroundColor: colors.primary + '20',
+            }]}>
+              <Text style={[styles.cardCountText, { color: colors.primary }]}>
+                {availableCards.length}
+              </Text>
+            </View>
+          </View>
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.cardsContainer}
           >
-            {availableCards.map((card) => {
+            {availableCards.map((card, index) => {
               const isSelected = selectedCard?.id === card.id;
               const cardColor = characteristicColors[card.characteristic];
+              const charIcon = characteristicIcons[card.characteristic];
               
               return (
                 <TouchableOpacity
@@ -390,6 +494,7 @@ export default function CardGameScreen() {
                   activeOpacity={0.8}
                 >
                   <Animated.View
+                    entering={SlideInDown.delay(index * 50).duration(300)}
                     style={[
                       styles.answerCard,
                       {
@@ -408,6 +513,12 @@ export default function CardGameScreen() {
                       borderBottomColor: cardColor + '40',
                       borderBottomWidth: 1,
                     }]}>
+                      <IconSymbol
+                        ios_icon_name={charIcon.ios}
+                        android_material_icon_name={charIcon.android}
+                        size={20}
+                        color={cardColor}
+                      />
                       <Text style={[styles.cardLabel, { color: cardColor }]}>
                         {card.label}
                       </Text>
@@ -417,6 +528,17 @@ export default function CardGameScreen() {
                     }]} numberOfLines={4}>
                       {card.content}
                     </Text>
+                    {isSelected && (
+                      <View style={[styles.selectedBadge, { backgroundColor: cardColor }]}>
+                        <IconSymbol
+                          ios_icon_name="hand.tap.fill"
+                          android_material_icon_name="touch-app"
+                          size={16}
+                          color="#FFFFFF"
+                        />
+                        <Text style={styles.selectedBadgeText}>Sélectionné</Text>
+                      </View>
+                    )}
                   </Animated.View>
                 </TouchableOpacity>
               );
@@ -455,6 +577,26 @@ export default function CardGameScreen() {
             <Text style={[styles.modalText, { color: colors.textSecondary }]}>
               Vous avez complété toutes les caractéristiques de {currentMuscle.name} !
             </Text>
+            
+            {/* Completed Muscle Image */}
+            <View style={[styles.completedMuscleCard, {
+              backgroundColor: isDark ? colors.darkBackground : colors.background,
+            }]}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?w=300&h=300&fit=crop' }}
+                style={styles.completedMuscleImage}
+                resizeMode="cover"
+              />
+              <View style={styles.completedMuscleOverlay}>
+                <IconSymbol
+                  ios_icon_name="checkmark.seal.fill"
+                  android_material_icon_name="verified"
+                  size={48}
+                  color={colors.success}
+                />
+              </View>
+            </View>
+            
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: colors.primary }]}
               onPress={handleContinueToNextMuscle}
@@ -564,14 +706,65 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
+  progressBarContainer: {
+    marginBottom: 24,
+    gap: 8,
+  },
+  progressBarBackground: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  muscleImageContainer: {
+    marginBottom: 24,
+  },
+  muscleImageCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    height: 200,
+    boxShadow: '0px 8px 24px rgba(3, 169, 244, 0.2)',
+    elevation: 8,
+  },
+  muscleImage: {
+    width: '100%',
+    height: '100%',
+  },
+  muscleImageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(3, 169, 244, 0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  muscleImageText: {
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  muscleImageSubtext: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   gameBoard: {
     alignItems: 'center',
     marginBottom: 32,
   },
   muscleCenterCard: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
@@ -579,10 +772,21 @@ const styles = StyleSheet.create({
     elevation: 8,
     marginBottom: 24,
   },
+  muscleCenterIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   muscleCenterText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  muscleCenterSubtext: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   slotsContainer: {
     flexDirection: 'row',
@@ -593,7 +797,7 @@ const styles = StyleSheet.create({
   },
   slot: {
     width: (CARD_WIDTH - 36) / 2,
-    minHeight: 80,
+    minHeight: 90,
     borderRadius: 12,
     padding: 12,
     justifyContent: 'center',
@@ -615,9 +819,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptySlotIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 2,
     borderStyle: 'dashed',
     alignItems: 'center',
@@ -631,8 +835,22 @@ const styles = StyleSheet.create({
   cardsSection: {
     gap: 16,
   },
+  cardsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   sectionTitle: {
     fontSize: 18,
+    fontWeight: '700',
+  },
+  cardCountBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  cardCountText: {
+    fontSize: 14,
     fontWeight: '700',
   },
   cardsContainer: {
@@ -640,13 +858,17 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   answerCard: {
-    width: CARD_WIDTH * 0.7,
+    width: CARD_WIDTH * 0.75,
     borderRadius: 16,
     overflow: 'hidden',
     elevation: 4,
   },
   cardHeader: {
     padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   cardLabel: {
     fontSize: 14,
@@ -657,6 +879,22 @@ const styles = StyleSheet.create({
     padding: 16,
     fontSize: 13,
     lineHeight: 20,
+  },
+  selectedBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  selectedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
   modalOverlay: {
     flex: 1,
@@ -691,6 +929,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  completedMuscleCard: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginVertical: 8,
+  },
+  completedMuscleImage: {
+    width: '100%',
+    height: '100%',
+  },
+  completedMuscleOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(76, 175, 80, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalButton: {
     width: '100%',
