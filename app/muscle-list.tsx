@@ -50,6 +50,43 @@ export default function MuscleListScreen() {
           </Text>
         </View>
 
+        <TouchableOpacity
+          style={[styles.gameButton, { backgroundColor: colors.secondary }]}
+          onPress={() => router.push('/card-game')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.gameButtonContent}>
+            <IconSymbol
+              ios_icon_name="gamecontroller.fill"
+              android_material_icon_name="sports-esports"
+              size={32}
+              color="#FFFFFF"
+            />
+            <View style={styles.gameButtonText}>
+              <Text style={[commonStyles.subtitle, styles.gameButtonTitle]}>
+                {t('startGame')}
+              </Text>
+              <Text style={[commonStyles.textSecondary, styles.gameButtonSubtitle]}>
+                Apprenez avec les cartes interactives
+              </Text>
+            </View>
+            <IconSymbol
+              ios_icon_name="chevron.right"
+              android_material_icon_name="chevron-right"
+              size={24}
+              color="#FFFFFF"
+            />
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.divider}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <Text style={[commonStyles.textSecondary, styles.dividerText]}>
+            ou parcourez les muscles
+          </Text>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
         {shoulderMuscles.map((muscle, index) => (
           <TouchableOpacity
             key={index}
@@ -130,6 +167,45 @@ const styles = StyleSheet.create({
   },
   infoText: {
     flex: 1,
+  },
+  gameButton: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 8,
+    boxShadow: '0px 4px 16px rgba(255, 87, 34, 0.3)',
+    elevation: 6,
+  },
+  gameButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  gameButtonText: {
+    flex: 1,
+    gap: 4,
+  },
+  gameButtonTitle: {
+    color: '#FFFFFF',
+    marginBottom: 0,
+    fontSize: 20,
+  },
+  gameButtonSubtitle: {
+    color: '#FFFFFF',
+    opacity: 0.9,
+    fontSize: 13,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 12,
   },
   muscleCard: {
     flexDirection: 'row',

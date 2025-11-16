@@ -1,115 +1,139 @@
 
-import React from "react";
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform } from "react-native";
-import { useTheme } from "@react-navigation/native";
-import { colors, commonStyles } from "@/styles/commonStyles";
-import Logo from "@/components/Logo";
-import { IconSymbol } from "@/components/IconSymbol";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { router } from "expo-router";
+import React from 'react';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native';
+import { router } from 'expo-router';
+import { useTheme } from '@react-navigation/native';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { IconSymbol } from '@/components/IconSymbol';
+import { colors, commonStyles } from '@/styles/commonStyles';
+import Logo from '@/components/Logo';
 
 export default function HomeScreen() {
   const theme = useTheme();
   const { t } = useLanguage();
 
-  const features = [
-    {
-      id: 'shoulder',
-      title: t('shoulderMuscles'),
-      description: t('shoulderDesc'),
-      icon: 'arm-flex',
-      iosIcon: 'figure.arms.open',
-      color: colors.primary,
-      route: '/muscle-list',
-    },
-    {
-      id: 'subscription',
-      title: t('subscriptionTitle'),
-      description: t('subscriptionDesc'),
-      icon: 'card',
-      iosIcon: 'creditcard.fill',
-      color: colors.secondary,
-      route: '/subscription',
-    },
-  ];
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Logo size="large" />
-          <Text style={[commonStyles.text, styles.welcomeText]}>
-            {t('welcomeDesc')}
-          </Text>
-        </View>
+    <ScrollView 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.header}>
+        <Logo size={80} />
+        <Text style={[commonStyles.title, styles.welcomeTitle]}>
+          {t('welcome')}
+        </Text>
+        <Text style={[commonStyles.textSecondary, styles.welcomeDesc]}>
+          {t('welcomeDesc')}
+        </Text>
+      </View>
 
-        <View style={styles.featuresContainer}>
-          {features.map((feature, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[styles.featureCard, { backgroundColor: colors.card }]}
-              onPress={() => {
-                if (feature.route === '/muscle-list') {
-                  router.push('/muscle-list' as any);
-                } else if (feature.route === '/subscription') {
-                  router.push('/subscription' as any);
-                }
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: feature.color + '20' }]}>
-                <IconSymbol
-                  ios_icon_name={feature.iosIcon}
-                  android_material_icon_name={feature.icon}
-                  size={32}
-                  color={feature.color}
-                />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={[commonStyles.subtitle, styles.featureTitle]}>
-                  {feature.title}
-                </Text>
-                <Text style={[commonStyles.textSecondary, styles.featureDescription]}>
-                  {feature.description}
-                </Text>
-              </View>
-              <IconSymbol
-                ios_icon_name="chevron.right"
-                android_material_icon_name="chevron-right"
-                size={24}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+      <View style={styles.section}>
+        <TouchableOpacity
+          style={[styles.primaryCard, { backgroundColor: colors.primary }]}
+          onPress={() => router.push('/card-game')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.cardIcon}>
             <IconSymbol
-              ios_icon_name="chart.bar.fill"
-              android_material_icon_name="bar-chart"
-              size={28}
-              color={colors.accent}
+              ios_icon_name="gamecontroller.fill"
+              android_material_icon_name="sports-esports"
+              size={40}
+              color="#FFFFFF"
             />
-            <Text style={[commonStyles.subtitle, styles.statValue]}>0</Text>
-            <Text style={commonStyles.textSecondary}>{t('musclesLearned')}</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+          <View style={styles.cardContent}>
+            <Text style={[commonStyles.subtitle, styles.cardTitle]}>
+              Jeu de cartes
+            </Text>
+            <Text style={[commonStyles.textSecondary, styles.cardDescription]}>
+              Apprenez l&apos;anatomie de manière interactive
+            </Text>
+          </View>
+          <IconSymbol
+            ios_icon_name="chevron.right"
+            android_material_icon_name="chevron-right"
+            size={28}
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: colors.card }]}
+          onPress={() => router.push('/muscle-list')}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.cardIconSmall, { backgroundColor: colors.secondary + '20' }]}>
+            <IconSymbol
+              ios_icon_name="figure.arms.open"
+              android_material_icon_name="accessibility"
+              size={32}
+              color={colors.secondary}
+            />
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={[commonStyles.subtitle, styles.cardTitleDark]}>
+              {t('shoulderMuscles')}
+            </Text>
+            <Text style={[commonStyles.textSecondary, styles.cardDescriptionSmall]}>
+              {t('shoulderDesc')}
+            </Text>
+          </View>
+          <IconSymbol
+            ios_icon_name="chevron.right"
+            android_material_icon_name="chevron-right"
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: colors.card }]}
+          onPress={() => router.push('/subscription')}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.cardIconSmall, { backgroundColor: colors.primary + '20' }]}>
             <IconSymbol
               ios_icon_name="star.fill"
               android_material_icon_name="star"
-              size={28}
-              color={colors.highlight}
+              size={32}
+              color={colors.primary}
             />
-            <Text style={[commonStyles.subtitle, styles.statValue]}>0</Text>
-            <Text style={commonStyles.textSecondary}>{t('totalScore')}</Text>
           </View>
+          <View style={styles.cardContent}>
+            <Text style={[commonStyles.subtitle, styles.cardTitleDark]}>
+              {t('subscription')}
+            </Text>
+            <Text style={[commonStyles.textSecondary, styles.cardDescriptionSmall]}>
+              {t('subscriptionDesc')}
+            </Text>
+          </View>
+          <IconSymbol
+            ios_icon_name="chevron.right"
+            android_material_icon_name="chevron-right"
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.infoSection, { backgroundColor: colors.primary + '10' }]}>
+        <IconSymbol
+          ios_icon_name="lightbulb.fill"
+          android_material_icon_name="lightbulb"
+          size={28}
+          color={colors.primary}
+        />
+        <View style={styles.infoContent}>
+          <Text style={[commonStyles.textBold, styles.infoTitle]}>
+            Comment jouer ?
+          </Text>
+          <Text style={[commonStyles.textSecondary, styles.infoText]}>
+            Sélectionnez une carte réponse et placez-la dans la case correspondante du muscle. Complétez toutes les caractéristiques pour passer au muscle suivant !
+          </Text>
         </View>
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -117,65 +141,99 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollContent: {
+  contentContainer: {
+    padding: 20,
     paddingTop: Platform.OS === 'android' ? 48 : 20,
-    paddingHorizontal: 20,
     paddingBottom: 120,
   },
   header: {
     alignItems: 'center',
     marginBottom: 32,
-    gap: 16,
   },
-  welcomeText: {
+  welcomeTitle: {
     textAlign: 'center',
-    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 8,
   },
-  featuresContainer: {
+  welcomeDesc: {
+    textAlign: 'center',
+    fontSize: 15,
+  },
+  section: {
     gap: 16,
     marginBottom: 24,
   },
-  featureCard: {
+  primaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
+    padding: 24,
+    borderRadius: 20,
     gap: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0px 6px 20px rgba(3, 169, 244, 0.3)',
+    elevation: 8,
+  },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 16,
+    gap: 16,
+    boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
     elevation: 3,
   },
-  iconContainer: {
+  cardIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardIconSmall: {
     width: 56,
     height: 56,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  featureContent: {
+  cardContent: {
     flex: 1,
     gap: 4,
   },
-  featureTitle: {
+  cardTitle: {
+    color: '#FFFFFF',
     marginBottom: 0,
+    fontSize: 22,
   },
-  featureDescription: {
+  cardTitleDark: {
+    marginBottom: 0,
+    fontSize: 18,
+  },
+  cardDescription: {
+    color: '#FFFFFF',
+    opacity: 0.95,
+    fontSize: 14,
+  },
+  cardDescriptionSmall: {
     fontSize: 13,
   },
-  statsContainer: {
+  infoSection: {
     flexDirection: 'row',
-    gap: 16,
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
     padding: 20,
-    borderRadius: 12,
-    gap: 8,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
+    borderRadius: 16,
+    gap: 16,
+    alignItems: 'flex-start',
   },
-  statValue: {
-    fontSize: 32,
-    marginBottom: 0,
+  infoContent: {
+    flex: 1,
+    gap: 6,
+  },
+  infoTitle: {
+    fontSize: 16,
+    color: colors.text,
+  },
+  infoText: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });
