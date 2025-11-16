@@ -1,7 +1,8 @@
+
 {
   "expo": {
-    "name": "Anatomy Trainer",
-    "slug": "Anatomy Trainer",
+    "name": "Abinarth Formation",
+    "slug": "Abinarth Formation",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/efaec100-f453-40a0-ac5b-6ba85628e3ad.jpeg",
@@ -52,5 +53,5 @@
       "router": {}
     }
   },
-  "scheme": "Anatomy Trainer"
+  "scheme": "Abinarth Formation"
 }

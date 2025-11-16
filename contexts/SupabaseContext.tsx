@@ -23,6 +23,7 @@ interface SupabaseContextType {
   isAuthenticated: boolean;
   hasTrialAccess: boolean;
   hasPremiumAccess: boolean;
+  enablePremiumAccess: () => void;
 }
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
@@ -41,7 +42,8 @@ export function useSupabase() {
       signOut: async () => ({ error: null }),
       isAuthenticated: false,
       hasTrialAccess: true,
-      hasPremiumAccess: false,
+      hasPremiumAccess: true,
+      enablePremiumAccess: () => console.log('Premium access enabled (fallback)'),
     };
   }
   return context;
@@ -51,6 +53,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [premiumEnabled, setPremiumEnabled] = useState(true); // Premium enabled by default for testing
 
   useEffect(() => {
     console.log('SupabaseProvider: Initializing');
@@ -135,6 +138,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const enablePremiumAccess = () => {
+    console.log('Premium access enabled for testing - all features unlocked');
+    setPremiumEnabled(true);
+  };
+
   const value: SupabaseContextType = {
     session,
     user: session?.user ?? null,
@@ -144,7 +152,8 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     signOut,
     isAuthenticated: !!session,
     hasTrialAccess: true, // Full trial access enabled
-    hasPremiumAccess: !!session,
+    hasPremiumAccess: premiumEnabled, // Premium access enabled for testing
+    enablePremiumAccess,
   };
 
   // Don't render children until initialized

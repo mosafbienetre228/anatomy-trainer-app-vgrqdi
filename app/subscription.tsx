@@ -7,18 +7,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSupabase } from '@/contexts/SupabaseContext';
 import * as Haptics from 'expo-haptics';
 
 export default function SubscriptionScreen() {
   const theme = useTheme();
   const { t } = useLanguage();
-  const [selectedPlan, setSelectedPlan] = useState<'trial' | 'premium'>('trial');
+  const { enablePremiumAccess } = useSupabase();
+  const [selectedPlan, setSelectedPlan] = useState<'trial' | 'premium'>('premium');
 
   const plans = [
     {
       id: 'trial',
       name: 'Essai Gratuit',
-      price: '0€',
+      price: '0 FCFA',
       period: '/30 jours',
       features: [
         'Accès complet à toutes les régions anatomiques',
@@ -29,13 +31,13 @@ export default function SubscriptionScreen() {
         'Contenu exclusif',
         'Aucune carte de crédit requise',
       ],
-      color: colors.primary,
-      recommended: true,
+      color: colors.cardGreen,
+      recommended: false,
     },
     {
       id: 'premium',
       name: t('premium'),
-      price: '9.99€',
+      price: '4.950 FCFA',
       period: '/mois',
       features: [
         'Accès illimité à toutes les régions',
@@ -46,37 +48,34 @@ export default function SubscriptionScreen() {
         'Contenu exclusif et mises à jour',
         'Statistiques avancées',
         'Mode hors ligne',
+        'Pas de publicités',
       ],
-      color: colors.accent,
+      color: colors.primary,
+      recommended: true,
     },
   ];
 
   const handleSubscribe = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    
-    if (selectedPlan === 'trial') {
-      Alert.alert(
-        'Essai gratuit activé ! 🎉',
-        'Vous avez maintenant un accès complet à toutes les fonctionnalités pendant 30 jours. Profitez-en !',
-        [
-          {
-            text: 'Commencer',
-            onPress: () => router.back(),
-          },
-        ]
-      );
-    } else {
-      Alert.alert(
-        'Paiement',
-        'Les fonctionnalités de paiement seront disponibles prochainement. En attendant, profitez de l\'essai gratuit !',
-        [
-          {
-            text: 'OK',
-            onPress: () => console.log('Payment info acknowledged'),
-          },
-        ]
-      );
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+    
+    // Enable premium access for testing - no payment required
+    enablePremiumAccess();
+    
+    Alert.alert(
+      '🎉 Accès Premium Activé !',
+      'Vous avez maintenant un accès complet à toutes les fonctionnalités premium. Profitez de votre expérience d\'apprentissage !',
+      [
+        {
+          text: 'Commencer',
+          onPress: () => {
+            console.log('Premium access granted for testing');
+            router.back();
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -113,10 +112,10 @@ export default function SubscriptionScreen() {
           />
           <View style={styles.infoTextContainer}>
             <Text style={[commonStyles.textBold, styles.infoTitle]}>
-              Essai gratuit de 30 jours
+              Accès Premium Gratuit pour Test
             </Text>
             <Text style={[commonStyles.text, styles.infoText]}>
-              Accès complet à toutes les fonctionnalités sans engagement
+              Testez toutes les fonctionnalités premium sans paiement
             </Text>
           </View>
         </View>
@@ -131,7 +130,9 @@ export default function SubscriptionScreen() {
               selectedPlan === plan.id && { borderColor: plan.color, borderWidth: 2 },
             ]}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
               setSelectedPlan(plan.id as 'trial' | 'premium');
             }}
             activeOpacity={0.7}
@@ -202,7 +203,7 @@ export default function SubscriptionScreen() {
               Paiement sécurisé
             </Text>
             <Text style={commonStyles.textSecondary}>
-              Paiement par monnaie numérique disponible prochainement
+              Paiement par monnaie numérique (Mobile Money, Orange Money, etc.)
             </Text>
           </View>
         </View>
@@ -210,13 +211,13 @@ export default function SubscriptionScreen() {
         <TouchableOpacity
           style={[
             styles.subscribeButton, 
-            { backgroundColor: selectedPlan === 'trial' ? colors.primary : colors.accent }
+            { backgroundColor: selectedPlan === 'premium' ? colors.primary : colors.cardGreen }
           ]}
           onPress={handleSubscribe}
           activeOpacity={0.8}
         >
           <Text style={styles.subscribeButtonText}>
-            {selectedPlan === 'trial' ? 'Commencer l\'essai gratuit' : 'S\'abonner maintenant'}
+            Activer l&apos;Accès Premium
           </Text>
           <IconSymbol
             ios_icon_name="arrow.right"
@@ -268,7 +269,7 @@ export default function SubscriptionScreen() {
         </View>
 
         <Text style={[commonStyles.textSecondary, styles.disclaimer]}>
-          * L&apos;essai gratuit vous donne un accès complet pendant 30 jours. Aucune carte de crédit requise.
+          * Accès premium gratuit pour tester toutes les fonctionnalités. Aucun paiement requis pour le moment.
         </Text>
       </ScrollView>
     </SafeAreaView>
