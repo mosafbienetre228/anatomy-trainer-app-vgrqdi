@@ -5,7 +5,7 @@ import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 
 interface LogoProps {
-  size?: 'small' | 'medium' | 'large';
+  size?: 'small' | 'medium' | 'large' | number;
 }
 
 export default function Logo({ size = 'medium' }: LogoProps) {
@@ -15,7 +15,13 @@ export default function Logo({ size = 'medium' }: LogoProps) {
     large: { iconSize: 80, fontSize: 32 },
   };
 
-  const currentSize = sizeStyles[size];
+  // Handle both string and number sizes
+  let currentSize;
+  if (typeof size === 'number') {
+    currentSize = { iconSize: size, fontSize: size * 0.4 };
+  } else {
+    currentSize = sizeStyles[size];
+  }
 
   return (
     <View style={styles.container}>

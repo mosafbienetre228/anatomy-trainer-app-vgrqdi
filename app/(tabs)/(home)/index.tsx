@@ -19,7 +19,7 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <Logo size={80} />
+        <Logo size="large" />
         <Text style={[commonStyles.title, styles.welcomeTitle, { color: theme.colors.text }]}>
           {t('welcome')}
         </Text>
