@@ -47,7 +47,10 @@ const translations: Record<Language, Record<string, string>> = {
     notifications: 'Notifications',
     about: 'À propos',
     logout: 'Déconnexion',
+    signOut: 'Déconnexion',
     home: 'Accueil',
+    progress: 'Progression',
+    help: 'Aide',
   },
   en: {
     welcome: 'Welcome to Abinarth Formation',
@@ -76,7 +79,10 @@ const translations: Record<Language, Record<string, string>> = {
     notifications: 'Notifications',
     about: 'About',
     logout: 'Logout',
+    signOut: 'Sign Out',
     home: 'Home',
+    progress: 'Progress',
+    help: 'Help',
   },
 };
 

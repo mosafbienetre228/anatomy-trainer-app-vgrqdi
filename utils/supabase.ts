@@ -32,6 +32,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const SUPABASE_URL = 'https://kfuqsnylkhqsdavkqnbl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdXFzbnlsa2hxc2RhdmtxbmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNjE2NjAsImV4cCI6MjA3ODgzNzY2MH0.NgLYJ4Xao4XWxGpEIpJUYX7ay7X9xWSmvs_d4PNhyl0';
 
+// Validate URL format before creating client
+if (!SUPABASE_URL || !SUPABASE_URL.startsWith('https://')) {
+  throw new Error('Invalid Supabase URL. Must start with https://');
+}
+
+if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.length < 20) {
+  throw new Error('Invalid Supabase anon key');
+}
+
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
