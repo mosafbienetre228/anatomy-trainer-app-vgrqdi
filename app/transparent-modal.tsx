@@ -1,6 +1,7 @@
+
 import { StyleSheet, Text, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@react-navigation/native';
 
 export default function TransparentModal() {
@@ -9,10 +10,14 @@ export default function TransparentModal() {
   return (
     <Pressable style={styles.backdrop} onPress={() => router.back()}>
       <Pressable onPress={(e) => e.stopPropagation()}>
-        <GlassView style={styles.modal} glassEffectStyle="regular">
+        <BlurView 
+          intensity={80} 
+          tint={theme.dark ? 'dark' : 'light'}
+          style={styles.modal}
+        >
           <Text style={[styles.title, { color: theme.colors.text }]}>Transparent Modal</Text>
           <Text style={[styles.text, { color: theme.colors.text }]}>Tap outside to dismiss</Text>
-        </GlassView>
+        </BlurView>
       </Pressable>
     </Pressable>
   );
@@ -31,16 +36,15 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     minWidth: 200,
+    overflow: 'hidden',
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 12,
-    // color handled dynamically
   },
   text: {
     fontSize: 16,
     textAlign: 'center',
-    // color handled dynamically
   },
 });

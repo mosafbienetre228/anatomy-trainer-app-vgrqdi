@@ -1,6 +1,7 @@
+
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { GlassView } from 'expo-glass-effect';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@react-navigation/native';
 
 export default function Modal() {
@@ -12,9 +13,13 @@ export default function Modal() {
       <Text style={[styles.text, { color: theme.colors.text }]}>This is a modal presentation.</Text>
 
       <Pressable onPress={() => router.back()}>
-        <GlassView style={styles.button} glassEffectStyle="clear">
+        <BlurView 
+          intensity={80} 
+          tint={theme.dark ? 'dark' : 'light'}
+          style={styles.button}
+        >
           <Text style={[styles.buttonText, { color: theme.colors.primary }]}>Close Modal</Text>
-        </GlassView>
+        </BlurView>
       </Pressable>
     </View>
   );
@@ -24,29 +29,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     padding: 20,
-    // backgroundColor handled dynamically
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
-    // color handled dynamically
   },
   text: {
     fontSize: 16,
     marginBottom: 24,
     textAlign: 'center',
-    // color handled dynamically
   },
   button: {
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
+    overflow: 'hidden',
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    // color handled dynamically
   },
 });
