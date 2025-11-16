@@ -3,7 +3,6 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface LogoProps {
   size?: 'small' | 'medium' | 'large' | number;
@@ -51,11 +50,11 @@ export default function Logo({ size = 'medium', showText = true }: LogoProps) {
           }]} />
         </View>
         
-        {/* Heart icon */}
+        {/* Brain icon - representing cognitive learning and anatomy education */}
         <View style={styles.iconWrapper}>
           <IconSymbol 
-            ios_icon_name="heart.fill" 
-            android_material_icon_name="favorite" 
+            ios_icon_name="brain.head.profile" 
+            android_material_icon_name="psychology" 
             size={currentSize.iconSize} 
             color="#FFFFFF" 
           />
