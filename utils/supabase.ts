@@ -5,55 +5,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /**
  * SUPABASE CONFIGURATION
  * 
- * This app is connected to Supabase for:
- * - Authentication (Email/Password, OAuth providers)
- * - Database (PostgreSQL with real-time subscriptions)
- * - Storage (File uploads and downloads)
- * - Edge Functions (Serverless functions)
+ * This is the SINGLE source of truth for Supabase client.
+ * Import this file everywhere you need Supabase:
  * 
- * Usage example:
  * import { supabase } from '@/utils/supabase';
- * 
- * // Sign in
- * const { data, error } = await supabase.auth.signInWithPassword({
- *   email: 'user@example.com',
- *   password: 'password123'
- * });
- * 
- * // Query data
- * const { data, error } = await supabase
- *   .from('table_name')
- *   .select('*')
- *   .eq('column', 'value');
  */
 
 // Supabase project credentials
 const SUPABASE_URL = 'https://kfuqsnylkhqsdavkqnbl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdXFzbnlsa2hxc2RhdmtxbmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNjE2NjAsImV4cCI6MjA3ODgzNzY2MH0.NgLYJ4Xao4XWxGpEIpJUYX7ay7X9xWSmvs_d4PNhyl0';
-
-// Validate URL format before creating client
-function validateSupabaseUrl(url: string): boolean {
-  try {
-    // Use a simple regex check instead of URL constructor to avoid polyfill issues
-    const urlPattern = /^https:\/\/[a-z0-9-]+\.supabase\.co$/i;
-    return urlPattern.test(url);
-  } catch (error) {
-    console.error('Invalid Supabase URL:', error);
-    return false;
-  }
-}
-
-if (!SUPABASE_URL || !validateSupabaseUrl(SUPABASE_URL)) {
-  console.error('Invalid Supabase URL configuration');
-  throw new Error('Invalid Supabase URL. Must be a valid HTTPS URL ending with supabase.co');
-}
-
-if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.length < 20) {
-  console.error('Invalid Supabase anon key configuration');
-  throw new Error('Invalid Supabase anon key');
-}
-
-console.log('Initializing Supabase client with URL:', SUPABASE_URL);
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -65,4 +25,4 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   },
 });
 
-console.log('Supabase client initialized successfully');
+export default supabase;

@@ -21,8 +21,8 @@ import { colors } from "@/styles/commonStyles";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Prevent the splash screen from auto-hiding
-SplashScreen.preventAutoHideAsync().catch((error) => {
-  console.error('Error preventing splash screen auto-hide:', error);
+SplashScreen.preventAutoHideAsync().catch(() => {
+  console.log('Splash screen already hidden');
 });
 
 const CustomLightTheme: Theme = {
@@ -60,34 +60,29 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (error) {
-      console.error('Error loading fonts:', error);
+      console.error('Font loading error:', error);
     }
   }, [error]);
 
   useEffect(() => {
     if (loaded) {
-      console.log('Fonts loaded, hiding splash screen');
-      SplashScreen.hideAsync().catch((error) => {
-        console.error('Error hiding splash screen:', error);
+      SplashScreen.hideAsync().catch(() => {
+        console.log('Error hiding splash screen');
       });
     }
   }, [loaded]);
 
   useEffect(() => {
     if (isConnected === false) {
-      console.log('No internet connection detected');
-    } else if (isConnected === true) {
-      console.log('Internet connection available');
+      console.log('No internet connection');
     }
   }, [isConnected]);
 
   if (!loaded) {
-    console.log('Waiting for fonts to load...');
     return null;
   }
 
   const theme = colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme;
-  console.log('RootLayout: Rendering with theme:', colorScheme);
 
   return (
     <ErrorBoundary>
@@ -119,7 +114,6 @@ export default function RootLayout() {
                     options={{ 
                       headerShown: false,
                       presentation: 'card',
-                      animation: 'slide_from_right',
                     }}
                   />
                   <Stack.Screen
@@ -127,7 +121,6 @@ export default function RootLayout() {
                     options={{ 
                       headerShown: false,
                       presentation: 'card',
-                      animation: 'slide_from_right',
                     }}
                   />
                   <Stack.Screen
@@ -135,7 +128,6 @@ export default function RootLayout() {
                     options={{ 
                       headerShown: false,
                       presentation: 'card',
-                      animation: 'slide_from_right',
                     }}
                   />
                   <Stack.Screen
@@ -143,7 +135,6 @@ export default function RootLayout() {
                     options={{ 
                       headerShown: false,
                       presentation: 'card',
-                      animation: 'slide_from_right',
                     }}
                   />
                   <Stack.Screen
@@ -151,7 +142,6 @@ export default function RootLayout() {
                     options={{ 
                       headerShown: false,
                       presentation: 'card',
-                      animation: 'slide_from_right',
                     }}
                   />
                   <Stack.Screen

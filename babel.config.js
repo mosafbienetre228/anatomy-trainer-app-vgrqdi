@@ -36,11 +36,13 @@ module.exports = function (api) {
             "@hooks": "./hooks",
             "@types": "./types",
             "@contexts": "./contexts",
+            "@data": "./data",
+            "@utils": "./utils",
+            "@styles": "./styles",
           },
         },
       ],
       ...EDITABLE_COMPONENTS,
-      "@babel/plugin-proposal-export-namespace-from",
       "react-native-reanimated/plugin", // Must be listed last!
     ],
   };

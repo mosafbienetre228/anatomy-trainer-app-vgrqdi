@@ -1,0 +1,50 @@
+
+# Example GitHub Actions Workflow for Automated Deployment
+# To use this:
+# 1. Create .github/workflows directory
+# 2. Copy this file to .github/workflows/deploy.yml
+# 3. Add EXPO_TOKEN to GitHub Secrets
+# 4. Push to main branch to trigger deployment
+
+name: Deploy App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Android
+        run: eas build --platform android --profile production --non-interactive
+
+      - name: Build iOS
+        run: eas build --platform ios --profile production --non-interactive
+
+      - name: Submit to stores (optional)
+        run: |
+          eas submit --platform android --latest
+          eas submit --platform ios --latest

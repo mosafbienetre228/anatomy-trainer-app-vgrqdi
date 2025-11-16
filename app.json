@@ -1,8 +1,8 @@
 
 {
   "expo": {
-    "name": "Abinarth Formation",
-    "slug": "abinarth-formation",
+    "name": "Anatomy Trainer",
+    "slug": "anatomy-trainer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/6593284a-19fd-48cb-b2db-69c92ab33508.jpeg",
@@ -41,8 +41,7 @@
           "backgroundColor": "#1a1a2e",
           "imageWidth": 200
         }
-      ],
-      "expo-web-browser"
+      ]
     ],
     "scheme": "abinarth",
     "experiments": {
