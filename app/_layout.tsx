@@ -1,7 +1,7 @@
 
-import { Stack, router } from "expo-router";
-import { SystemBars } from "react-native-edge-to-edge";
 import React, { useEffect } from "react";
+import { Stack } from "expo-router";
+import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   DarkTheme,
@@ -14,7 +14,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import "react-native-reanimated";
 import { useNetworkState } from "expo-network";
 import * as SplashScreen from "expo-splash-screen";
-import { useColorScheme, Alert } from "react-native";
+import { useColorScheme } from "react-native";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "@/styles/commonStyles";
@@ -39,10 +39,10 @@ const CustomDarkTheme: Theme = {
   colors: {
     ...DarkTheme.colors,
     primary: colors.primary,
-    background: colors.background,
-    card: colors.card,
-    text: colors.text,
-    border: colors.textSecondary,
+    background: '#121212',
+    card: '#1e1e1e',
+    text: '#ffffff',
+    border: '#333333',
     notification: colors.accent,
   },
 };
@@ -60,45 +60,71 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  useEffect(() => {
+    if (isConnected === false) {
+      console.log('No internet connection detected');
+    }
+  }, [isConnected]);
+
   if (!loaded) {
     return null;
   }
 
+  const theme = colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={CustomLightTheme}>
+      <ThemeProvider value={theme}>
         <LanguageProvider>
           <WidgetProvider>
             <SystemBars style="auto" />
-            <StatusBar style="auto" />
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+                contentStyle: {
+                  backgroundColor: theme.colors.background,
+                },
+              }}
+            >
+              <Stack.Screen 
+                name="(tabs)" 
+                options={{ 
+                  headerShown: false,
+                  animation: 'none',
+                }} 
+              />
               <Stack.Screen
                 name="muscle-list"
                 options={{ 
                   headerShown: false,
-                  presentation: "card",
+                  presentation: 'card',
+                  animation: 'slide_from_right',
                 }}
               />
               <Stack.Screen
                 name="muscle-detail"
                 options={{ 
                   headerShown: false,
-                  presentation: "card",
+                  presentation: 'card',
+                  animation: 'slide_from_right',
                 }}
               />
               <Stack.Screen
                 name="subscription"
                 options={{ 
                   headerShown: false,
-                  presentation: "card",
+                  presentation: 'card',
+                  animation: 'slide_from_right',
                 }}
               />
               <Stack.Screen
                 name="card-game"
                 options={{ 
                   headerShown: false,
-                  presentation: "card",
+                  presentation: 'card',
+                  animation: 'slide_from_right',
                 }}
               />
               <Stack.Screen

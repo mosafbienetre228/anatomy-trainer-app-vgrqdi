@@ -20,7 +20,7 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <Logo size={80} />
-        <Text style={[commonStyles.title, styles.welcomeTitle]}>
+        <Text style={[commonStyles.title, styles.welcomeTitle, { color: theme.colors.text }]}>
           {t('welcome')}
         </Text>
         <Text style={[commonStyles.textSecondary, styles.welcomeDesc]}>
@@ -59,7 +59,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.card, { backgroundColor: colors.card }]}
+          style={[styles.card, { backgroundColor: theme.colors.card }]}
           onPress={() => router.push('/muscle-list')}
           activeOpacity={0.7}
         >
@@ -72,7 +72,7 @@ export default function HomeScreen() {
             />
           </View>
           <View style={styles.cardContent}>
-            <Text style={[commonStyles.subtitle, styles.cardTitleDark]}>
+            <Text style={[commonStyles.subtitle, styles.cardTitleDark, { color: theme.colors.text }]}>
               {t('shoulderMuscles')}
             </Text>
             <Text style={[commonStyles.textSecondary, styles.cardDescriptionSmall]}>
@@ -88,7 +88,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.card, { backgroundColor: colors.card }]}
+          style={[styles.card, { backgroundColor: theme.colors.card }]}
           onPress={() => router.push('/subscription')}
           activeOpacity={0.7}
         >
@@ -101,7 +101,7 @@ export default function HomeScreen() {
             />
           </View>
           <View style={styles.cardContent}>
-            <Text style={[commonStyles.subtitle, styles.cardTitleDark]}>
+            <Text style={[commonStyles.subtitle, styles.cardTitleDark, { color: theme.colors.text }]}>
               {t('subscription')}
             </Text>
             <Text style={[commonStyles.textSecondary, styles.cardDescriptionSmall]}>
@@ -125,7 +125,7 @@ export default function HomeScreen() {
           color={colors.primary}
         />
         <View style={styles.infoContent}>
-          <Text style={[commonStyles.textBold, styles.infoTitle]}>
+          <Text style={[commonStyles.textBold, styles.infoTitle, { color: theme.colors.text }]}>
             Comment jouer ?
           </Text>
           <Text style={[commonStyles.textSecondary, styles.infoText]}>
@@ -230,7 +230,6 @@ const styles = StyleSheet.create({
   },
   infoTitle: {
     fontSize: 16,
-    color: colors.text,
   },
   infoText: {
     fontSize: 13,

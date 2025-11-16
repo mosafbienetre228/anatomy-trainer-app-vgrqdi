@@ -9,30 +9,25 @@ interface LanguageContextType {
   t: (key: string) => string;
 }
 
-const translations = {
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
+
+const translations: Record<Language, Record<string, string>> = {
   fr: {
-    home: 'Accueil',
-    learn: 'Apprendre',
-    profile: 'Profil',
-    subscription: 'Abonnement',
     welcome: 'Bienvenue sur Abinarth Formation',
-    welcomeDesc: 'Apprenez l\'anatomie de manière interactive avec notre système de cartes',
-    startLearning: 'Commencer l\'apprentissage',
+    welcomeDesc: 'Apprenez l\'anatomie de manière interactive et ludique',
     shoulderMuscles: 'Muscles de l\'épaule',
-    shoulderDesc: '15 muscles à découvrir',
-    myProgress: 'Ma progression',
-    settings: 'Paramètres',
-    language: 'Langue',
-    subscriptionTitle: 'Gestion de l\'abonnement',
-    subscriptionDesc: 'Accédez à tous les modules d\'anatomie',
-    subscribe: 'S\'abonner',
-    currentPlan: 'Plan actuel',
-    free: 'Gratuit',
-    premium: 'Premium',
-    musclesLearned: 'Muscles appris',
-    totalScore: 'Score total',
-    recentSessions: 'Sessions récentes',
-    characteristics: 'Caractéristiques',
+    shoulderDesc: 'Découvrez les 15 muscles de la région de l\'épaule',
+    subscription: 'Abonnement',
+    subscriptionDesc: 'Débloquez toutes les fonctionnalités premium',
+    startGame: 'Commencer le jeu',
     definition: 'Définition',
     origin: 'Origine',
     path: 'Trajet',
@@ -41,42 +36,27 @@ const translations = {
     action: 'Action',
     relations: 'Rapports',
     clinicalApplications: 'Applications cliniques',
-    startGame: 'Démarrer le jeu',
-    viewDetails: 'Voir les détails',
-    cardGame: 'Jeu de cartes',
-    cardGameDesc: 'Apprenez l\'anatomie de manière interactive',
-    selectCard: 'Sélectionnez une carte',
-    placeCard: 'Placez la carte',
-    correct: 'Correct !',
-    incorrect: 'Incorrect',
-    gameComplete: 'Jeu terminé !',
-    yourScore: 'Votre score',
-    playAgain: 'Rejouer',
-    answerCards: 'Cartes réponses',
+    characteristics: 'Caractéristiques anatomiques',
+    free: 'Gratuit',
+    premium: 'Premium',
+    subscribe: 'S\'abonner',
+    profile: 'Profil',
+    settings: 'Paramètres',
+    language: 'Langue',
+    darkMode: 'Mode sombre',
+    notifications: 'Notifications',
+    about: 'À propos',
+    logout: 'Déconnexion',
+    home: 'Accueil',
   },
   en: {
-    home: 'Home',
-    learn: 'Learn',
-    profile: 'Profile',
-    subscription: 'Subscription',
     welcome: 'Welcome to Abinarth Formation',
-    welcomeDesc: 'Learn anatomy interactively with our card system',
-    startLearning: 'Start Learning',
+    welcomeDesc: 'Learn anatomy in an interactive and fun way',
     shoulderMuscles: 'Shoulder Muscles',
-    shoulderDesc: '15 muscles to discover',
-    myProgress: 'My Progress',
-    settings: 'Settings',
-    language: 'Language',
-    subscriptionTitle: 'Subscription Management',
-    subscriptionDesc: 'Access all anatomy modules',
-    subscribe: 'Subscribe',
-    currentPlan: 'Current Plan',
-    free: 'Free',
-    premium: 'Premium',
-    musclesLearned: 'Muscles Learned',
-    totalScore: 'Total Score',
-    recentSessions: 'Recent Sessions',
-    characteristics: 'Characteristics',
+    shoulderDesc: 'Discover the 15 muscles of the shoulder region',
+    subscription: 'Subscription',
+    subscriptionDesc: 'Unlock all premium features',
+    startGame: 'Start Game',
     definition: 'Definition',
     origin: 'Origin',
     path: 'Path',
@@ -85,28 +65,31 @@ const translations = {
     action: 'Action',
     relations: 'Relations',
     clinicalApplications: 'Clinical Applications',
-    startGame: 'Start Game',
-    viewDetails: 'View Details',
-    cardGame: 'Card Game',
-    cardGameDesc: 'Learn anatomy interactively',
-    selectCard: 'Select a card',
-    placeCard: 'Place the card',
-    correct: 'Correct!',
-    incorrect: 'Incorrect',
-    gameComplete: 'Game Complete!',
-    yourScore: 'Your Score',
-    playAgain: 'Play Again',
-    answerCards: 'Answer Cards',
+    characteristics: 'Anatomical Characteristics',
+    free: 'Free',
+    premium: 'Premium',
+    subscribe: 'Subscribe',
+    profile: 'Profile',
+    settings: 'Settings',
+    language: 'Language',
+    darkMode: 'Dark Mode',
+    notifications: 'Notifications',
+    about: 'About',
+    logout: 'Logout',
+    home: 'Home',
   },
 };
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
-
-export function LanguageProvider({ children }: { children: ReactNode }) {
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>('fr');
 
   const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations.fr] || key;
+    const translation = translations[language][key];
+    if (!translation) {
+      console.warn(`Translation missing for key: ${key} in language: ${language}`);
+      return key;
+    }
+    return translation;
   };
 
   return (
@@ -114,12 +97,4 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       {children}
     </LanguageContext.Provider>
   );
-}
-
-export function useLanguage() {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
-}
+};

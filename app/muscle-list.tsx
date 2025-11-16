@@ -15,7 +15,7 @@ export default function MuscleListScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.colors.background }]}>
         <TouchableOpacity 
           onPress={() => router.back()}
           style={styles.backButton}
@@ -24,10 +24,10 @@ export default function MuscleListScreen() {
             ios_icon_name="chevron.left"
             android_material_icon_name="arrow-back"
             size={24}
-            color={colors.text}
+            color={theme.colors.text}
           />
         </TouchableOpacity>
-        <Text style={[commonStyles.subtitle, styles.headerTitle]}>
+        <Text style={[commonStyles.subtitle, styles.headerTitle, { color: theme.colors.text }]}>
           {t('shoulderMuscles')}
         </Text>
         <View style={styles.placeholder} />
@@ -88,35 +88,36 @@ export default function MuscleListScreen() {
         </View>
 
         {shoulderMuscles.map((muscle, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[styles.muscleCard, { backgroundColor: colors.card }]}
-            onPress={() => router.push(`/muscle-detail?id=${muscle.id}` as any)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.muscleIcon, { backgroundColor: colors.secondary + '20' }]}>
+          <React.Fragment key={`muscle-${index}`}>
+            <TouchableOpacity
+              style={[styles.muscleCard, { backgroundColor: theme.colors.card }]}
+              onPress={() => router.push(`/muscle-detail?id=${muscle.id}` as any)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.muscleIcon, { backgroundColor: colors.secondary + '20' }]}>
+                <IconSymbol
+                  ios_icon_name="figure.arms.open"
+                  android_material_icon_name="accessibility"
+                  size={28}
+                  color={colors.secondary}
+                />
+              </View>
+              <View style={styles.muscleContent}>
+                <Text style={[commonStyles.subtitle, styles.muscleName, { color: theme.colors.text }]}>
+                  {muscle.name}
+                </Text>
+                <Text style={[commonStyles.textSecondary, styles.muscleDefinition]} numberOfLines={2}>
+                  {muscle.definition}
+                </Text>
+              </View>
               <IconSymbol
-                ios_icon_name="figure.arms.open"
-                android_material_icon_name="accessibility"
-                size={28}
-                color={colors.secondary}
+                ios_icon_name="chevron.right"
+                android_material_icon_name="chevron-right"
+                size={24}
+                color={colors.textSecondary}
               />
-            </View>
-            <View style={styles.muscleContent}>
-              <Text style={[commonStyles.subtitle, styles.muscleName]}>
-                {muscle.name}
-              </Text>
-              <Text style={[commonStyles.textSecondary, styles.muscleDefinition]} numberOfLines={2}>
-                {muscle.definition}
-              </Text>
-            </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron-right"
-              size={24}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </React.Fragment>
         ))}
       </ScrollView>
     </SafeAreaView>
