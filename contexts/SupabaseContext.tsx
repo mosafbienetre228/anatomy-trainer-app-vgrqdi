@@ -11,6 +11,8 @@ interface SupabaseContextType {
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   isAuthenticated: boolean;
+  hasTrialAccess: boolean;
+  hasPremiumAccess: boolean;
 }
 
 const SupabaseContext = createContext<SupabaseContextType | undefined>(undefined);
@@ -26,6 +28,9 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       console.log('Initial session:', session);
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+    }).catch((error) => {
+      console.error('Error getting session:', error);
       setLoading(false);
     });
 
@@ -60,6 +65,9 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: 'https://natively.dev/email-confirmed'
+        }
       });
       return { error };
     } catch (error) {
@@ -86,6 +94,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signOut,
     isAuthenticated: !!session,
+    // Enable full trial access for all users
+    hasTrialAccess: true,
+    // Premium access for authenticated users (can be extended with subscription logic)
+    hasPremiumAccess: !!session,
   };
 
   return (

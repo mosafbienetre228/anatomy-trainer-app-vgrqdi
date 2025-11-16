@@ -1,68 +1,142 @@
 
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useTheme } from "@react-navigation/native";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { useSupabase } from "@/contexts/SupabaseContext";
-import { IconSymbol } from "@/components/IconSymbol";
-import { colors, commonStyles } from "@/styles/commonStyles";
-import { router } from "expo-router";
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { router } from 'expo-router';
+import { useTheme } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { IconSymbol } from '@/components/IconSymbol';
+import { colors, commonStyles } from '@/styles/commonStyles';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import * as Haptics from 'expo-haptics';
 
 export default function ProfileScreen() {
   const theme = useTheme();
-  const { t, language, setLanguage } = useLanguage();
-  const { user, isAuthenticated, signOut } = useSupabase();
-  const [darkMode, setDarkMode] = useState(false);
+  const { t } = useLanguage();
+  const { user, signOut, isAuthenticated, hasTrialAccess, hasPremiumAccess } = useSupabase();
+  const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      console.error('Sign out error:', error);
-    }
+    Alert.alert(
+      'Déconnexion',
+      'Êtes-vous sûr de vouloir vous déconnecter ?',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Déconnexion',
+          style: 'destructive',
+          onPress: async () => {
+            setSigningOut(true);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            
+            const { error } = await signOut();
+            
+            if (error) {
+              console.error('Sign out error:', error);
+              Alert.alert('Erreur', 'Une erreur est survenue lors de la déconnexion');
+            } else {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              router.replace('/(tabs)/(home)');
+            }
+            
+            setSigningOut(false);
+          },
+        },
+      ]
+    );
   };
 
-  const settingsOptions = [
+  const menuItems = [
     {
-      id: 'language',
-      label: t('language'),
-      icon: 'language',
-      iosIcon: 'globe',
-      value: language === 'fr' ? 'Français' : 'English',
-      onPress: () => setLanguage(language === 'fr' ? 'en' : 'fr'),
+      icon: 'person.fill',
+      androidIcon: 'person',
+      title: t('profile'),
+      subtitle: user?.email || 'Non connecté',
+      onPress: () => {
+        if (!isAuthenticated) {
+          router.push('/auth');
+        } else {
+          console.log('Edit profile');
+        }
+      },
     },
     {
-      id: 'darkMode',
-      label: t('darkMode'),
-      icon: 'dark-mode',
-      iosIcon: 'moon.fill',
-      value: darkMode ? 'Activé' : 'Désactivé',
-      onPress: () => setDarkMode(!darkMode),
+      icon: 'star.fill',
+      androidIcon: 'star',
+      title: t('subscription'),
+      subtitle: hasTrialAccess ? 'Essai gratuit actif' : hasPremiumAccess ? 'Premium' : 'Gratuit',
+      badge: hasTrialAccess ? 'TRIAL' : hasPremiumAccess ? 'PREMIUM' : null,
+      badgeColor: hasTrialAccess ? colors.primary : colors.accent,
+      onPress: () => router.push('/subscription'),
     },
     {
-      id: 'notifications',
-      label: t('notifications'),
-      icon: 'notifications',
-      iosIcon: 'bell.fill',
-      value: 'Activées',
-      onPress: () => console.log('Notifications pressed'),
+      icon: 'chart.bar.fill',
+      androidIcon: 'bar-chart',
+      title: t('progress'),
+      subtitle: 'Voir vos statistiques',
+      onPress: () => console.log('View progress'),
+    },
+    {
+      icon: 'globe',
+      androidIcon: 'language',
+      title: t('language'),
+      subtitle: 'Français',
+      onPress: () => console.log('Change language'),
+    },
+    {
+      icon: 'bell.fill',
+      androidIcon: 'notifications',
+      title: t('notifications'),
+      subtitle: 'Gérer les notifications',
+      onPress: () => console.log('Manage notifications'),
+    },
+    {
+      icon: 'questionmark.circle.fill',
+      androidIcon: 'help',
+      title: t('help'),
+      subtitle: 'Centre d\'aide et support',
+      onPress: () => console.log('Help center'),
     },
   ];
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={[commonStyles.title, styles.headerTitle]}>
+          {t('profile')}
+        </Text>
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={[commonStyles.title, styles.title, { color: theme.colors.text }]}>
-            {t('profile')}
-          </Text>
-        </View>
+        {hasTrialAccess && (
+          <View style={[styles.trialBanner, { backgroundColor: colors.primary + '20' }]}>
+            <View style={styles.trialIconContainer}>
+              <IconSymbol
+                ios_icon_name="gift.fill"
+                android_material_icon_name="card-giftcard"
+                size={32}
+                color={colors.primary}
+              />
+            </View>
+            <View style={styles.trialTextContainer}>
+              <Text style={[commonStyles.textBold, styles.trialTitle]}>
+                Essai gratuit actif ! 🎉
+              </Text>
+              <Text style={[commonStyles.textSecondary, styles.trialSubtitle]}>
+                Accès complet à toutes les fonctionnalités
+              </Text>
+            </View>
+          </View>
+        )}
 
-        <View style={[styles.profileCard, { backgroundColor: theme.colors.card }]}>
+        <View style={[styles.profileCard, { backgroundColor: colors.card }]}>
           <View style={[styles.avatarContainer, { backgroundColor: colors.primary + '20' }]}>
             <IconSymbol
               ios_icon_name="person.fill"
@@ -71,97 +145,71 @@ export default function ProfileScreen() {
               color={colors.primary}
             />
           </View>
-          <Text style={[commonStyles.subtitle, styles.userName, { color: theme.colors.text }]}>
-            {isAuthenticated ? (user?.email?.split('@')[0] || 'User') : 'Guest'}
-          </Text>
-          <Text style={[commonStyles.textSecondary, styles.userEmail]}>
-            {isAuthenticated ? user?.email : 'Not signed in'}
-          </Text>
-          
-          {!isAuthenticated && (
-            <TouchableOpacity
-              style={[styles.signInButton, { backgroundColor: colors.primary }]}
-              onPress={() => router.push('/auth')}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.signInButtonText}>Sign In with Supabase</Text>
-            </TouchableOpacity>
+          <View style={styles.profileInfo}>
+            <Text style={[commonStyles.subtitle, styles.profileName]}>
+              {user?.email?.split('@')[0] || 'Utilisateur'}
+            </Text>
+            <Text style={commonStyles.textSecondary}>
+              {user?.email || 'Non connecté'}
+            </Text>
+          </View>
+          {isAuthenticated && (
+            <View style={[styles.statusBadge, { backgroundColor: colors.success + '20' }]}>
+              <View style={[styles.statusDot, { backgroundColor: colors.success }]} />
+              <Text style={[commonStyles.textBold, { color: colors.success, fontSize: 12 }]}>
+                Actif
+              </Text>
+            </View>
           )}
         </View>
 
-        <View style={styles.section}>
-          <Text style={[commonStyles.textBold, styles.sectionTitle, { color: theme.colors.text }]}>
-            {t('settings')}
-          </Text>
-          {settingsOptions.map((option, index) => (
-            <React.Fragment key={`setting-${index}`}>
-              <TouchableOpacity
-                style={[styles.settingItem, { backgroundColor: theme.colors.card }]}
-                onPress={option.onPress}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
-                  <IconSymbol
-                    ios_icon_name={option.iosIcon}
-                    android_material_icon_name={option.icon}
-                    size={24}
-                    color={colors.primary}
-                  />
-                </View>
-                <View style={styles.settingContent}>
-                  <Text style={[commonStyles.text, styles.settingLabel, { color: theme.colors.text }]}>
-                    {option.label}
-                  </Text>
-                  <Text style={[commonStyles.textSecondary, styles.settingValue]}>
-                    {option.value}
-                  </Text>
-                </View>
+        <View style={styles.menuSection}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.menuItem, { backgroundColor: colors.card }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                item.onPress();
+              }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.menuIconContainer, { backgroundColor: colors.primary + '15' }]}>
                 <IconSymbol
-                  ios_icon_name="chevron.right"
-                  android_material_icon_name="chevron-right"
+                  ios_icon_name={item.icon}
+                  android_material_icon_name={item.androidIcon}
                   size={24}
-                  color={colors.textSecondary}
+                  color={colors.primary}
                 />
-              </TouchableOpacity>
-            </React.Fragment>
+              </View>
+              <View style={styles.menuContent}>
+                <Text style={[commonStyles.textBold, styles.menuTitle]}>
+                  {item.title}
+                </Text>
+                <Text style={[commonStyles.textSecondary, styles.menuSubtitle]}>
+                  {item.subtitle}
+                </Text>
+              </View>
+              {item.badge && (
+                <View style={[styles.badge, { backgroundColor: item.badgeColor }]}>
+                  <Text style={styles.badgeText}>{item.badge}</Text>
+                </View>
+              )}
+              <IconSymbol
+                ios_icon_name="chevron.right"
+                android_material_icon_name="chevron-right"
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
           ))}
         </View>
 
-        <View style={styles.section}>
-          <Text style={[commonStyles.textBold, styles.sectionTitle, { color: theme.colors.text }]}>
-            Informations
-          </Text>
+        {isAuthenticated ? (
           <TouchableOpacity
-            style={[styles.settingItem, { backgroundColor: theme.colors.card }]}
-            onPress={() => console.log('About pressed')}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.settingIcon, { backgroundColor: colors.secondary + '15' }]}>
-              <IconSymbol
-                ios_icon_name="info.circle.fill"
-                android_material_icon_name="info"
-                size={24}
-                color={colors.secondary}
-              />
-            </View>
-            <View style={styles.settingContent}>
-              <Text style={[commonStyles.text, styles.settingLabel, { color: theme.colors.text }]}>
-                {t('about')}
-              </Text>
-            </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron-right"
-              size={24}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {isAuthenticated && (
-          <TouchableOpacity
-            style={[styles.logoutButton, { backgroundColor: colors.error + '15' }]}
+            style={[styles.signOutButton, { backgroundColor: colors.error + '15' }]}
             onPress={handleSignOut}
+            disabled={signingOut}
             activeOpacity={0.7}
           >
             <IconSymbol
@@ -170,11 +218,31 @@ export default function ProfileScreen() {
               size={24}
               color={colors.error}
             />
-            <Text style={[commonStyles.textBold, styles.logoutText, { color: colors.error }]}>
-              {t('logout')}
+            <Text style={[commonStyles.textBold, { color: colors.error }]}>
+              {signingOut ? 'Déconnexion...' : t('signOut')}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.signInButton, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/auth')}
+            activeOpacity={0.8}
+          >
+            <IconSymbol
+              ios_icon_name="person.fill"
+              android_material_icon_name="person"
+              size={24}
+              color="#FFFFFF"
+            />
+            <Text style={[commonStyles.textBold, { color: '#FFFFFF' }]}>
+              Se connecter
             </Text>
           </TouchableOpacity>
         )}
+
+        <Text style={[commonStyles.textSecondary, styles.version]}>
+          Version 1.0.0
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -184,100 +252,147 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingTop: Platform.OS === 'android' ? 48 : 16,
+  },
+  headerTitle: {
+    marginBottom: 0,
+  },
   container: {
     flex: 1,
   },
   contentContainer: {
     padding: 20,
-    paddingTop: Platform.OS === 'android' ? 48 : 20,
+    gap: 20,
     paddingBottom: 120,
   },
-  header: {
-    marginBottom: 24,
+  trialBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderRadius: 16,
+    gap: 16,
+    boxShadow: '0px 4px 12px rgba(3, 169, 244, 0.2)',
+    elevation: 4,
   },
-  title: {
-    marginBottom: 0,
+  trialIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trialTextContainer: {
+    flex: 1,
+  },
+  trialTitle: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  trialSubtitle: {
+    fontSize: 14,
   },
   profileCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 32,
+    padding: 20,
     borderRadius: 16,
-    marginBottom: 32,
-    boxShadow: '0px 2px 12px rgba(0, 0, 0, 0.08)',
+    gap: 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
-  userName: {
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
     marginBottom: 4,
+    textTransform: 'capitalize',
   },
-  userEmail: {
-    fontSize: 14,
-    marginBottom: 16,
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
   },
-  signInButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 8,
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  signInButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
+  menuSection: {
+    gap: 12,
   },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    marginBottom: 12,
-    fontSize: 14,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  settingItem: {
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 8,
-    gap: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.05)',
+    gap: 12,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
     elevation: 2,
   },
-  settingIcon: {
+  menuIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  settingContent: {
+  menuContent: {
     flex: 1,
-    gap: 2,
   },
-  settingLabel: {
+  menuTitle: {
     fontSize: 16,
+    marginBottom: 2,
   },
-  settingValue: {
+  menuSubtitle: {
     fontSize: 13,
   },
-  logoutButton: {
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  signOutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
     borderRadius: 12,
     gap: 12,
-    marginTop: 16,
+    marginTop: 8,
   },
-  logoutText: {
-    fontSize: 16,
+  signInButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+    marginTop: 8,
+    boxShadow: '0px 4px 12px rgba(3, 169, 244, 0.3)',
+    elevation: 5,
+  },
+  version: {
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 8,
   },
 });

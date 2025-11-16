@@ -10,171 +10,225 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useSupabase } from '@/contexts/SupabaseContext';
+import { useTheme } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
+import { useSupabase } from '@/contexts/SupabaseContext';
+import * as Haptics from 'expo-haptics';
 
 export default function AuthScreen() {
   const theme = useTheme();
-  const { signIn, signUp, loading } = useSupabase();
+  const { signIn, signUp } = useSupabase();
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleAuth = async () => {
     if (!email || !password) {
-      setError('Please fill in all fields');
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
     }
 
-    setIsLoading(true);
-    setError('');
+    if (password.length < 6) {
+      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
+    setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     try {
-      const { error } = isSignUp
-        ? await signUp(email, password)
-        : await signIn(email, password);
-
-      if (error) {
-        setError(error.message);
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        
+        if (error) {
+          console.error('Sign in error:', error);
+          Alert.alert(
+            'Erreur de connexion',
+            error.message || 'Une erreur est survenue lors de la connexion'
+          );
+        } else {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Alert.alert(
+            'Connexion réussie ! 🎉',
+            'Bienvenue sur Abinarth Formation',
+            [
+              {
+                text: 'Continuer',
+                onPress: () => router.replace('/(tabs)/(home)'),
+              },
+            ]
+          );
+        }
       } else {
-        // Navigate back on success
-        router.back();
+        const { error } = await signUp(email, password);
+        
+        if (error) {
+          console.error('Sign up error:', error);
+          Alert.alert(
+            'Erreur d\'inscription',
+            error.message || 'Une erreur est survenue lors de l\'inscription'
+          );
+        } else {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Alert.alert(
+            'Inscription réussie ! 🎉',
+            'Un email de confirmation a été envoyé à votre adresse. Veuillez vérifier votre boîte de réception et cliquer sur le lien de confirmation pour activer votre compte.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setIsLogin(true);
+                  setPassword('');
+                },
+              },
+            ]
+          );
+        }
       }
-    } catch (err) {
-      console.error('Auth error:', err);
-      setError('An unexpected error occurred');
+    } catch (error) {
+      console.error('Auth error:', error);
+      Alert.alert(
+        'Erreur',
+        'Une erreur inattendue est survenue. Veuillez réessayer.'
+      );
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        style={styles.container}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity
+            <TouchableOpacity 
               onPress={() => router.back()}
               style={styles.backButton}
             >
               <IconSymbol
                 ios_icon_name="chevron.left"
-                android_material_icon_name="arrow_back"
+                android_material_icon_name="arrow-back"
                 size={24}
-                color={theme.colors.text}
+                color={colors.text}
               />
             </TouchableOpacity>
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              {isSignUp ? 'Create Account' : 'Sign In'}
-            </Text>
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>Email</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.text,
-                    borderColor: theme.colors.border,
-                  },
-                ]}
-                placeholder="your@email.com"
-                placeholderTextColor={colors.textSecondary}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                autoComplete="email"
+          <View style={styles.content}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
+              <IconSymbol
+                ios_icon_name="person.circle.fill"
+                android_material_icon_name="account-circle"
+                size={80}
+                color={colors.primary}
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>Password</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.text,
-                    borderColor: theme.colors.border,
-                  },
-                ]}
-                placeholder="••••••••"
-                placeholderTextColor={colors.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoComplete="password"
-              />
-            </View>
+            <Text style={styles.title}>
+              {isLogin ? 'Connexion' : 'Inscription'}
+            </Text>
+            <Text style={styles.subtitle}>
+              {isLogin 
+                ? 'Connectez-vous pour accéder à votre compte' 
+                : 'Créez un compte pour commencer votre apprentissage'}
+            </Text>
 
-            {error ? (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{error}</Text>
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <IconSymbol
+                  ios_icon_name="envelope.fill"
+                  android_material_icon_name="email"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+                <TextInput
+                  style={[styles.input, { color: colors.text }]}
+                  placeholder="Email"
+                  placeholderTextColor={colors.textSecondary}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  editable={!loading}
+                />
               </View>
-            ) : null}
 
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: colors.primary }]}
-              onPress={handleAuth}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.buttonText}>
-                  {isSignUp ? 'Sign Up' : 'Sign In'}
+              <View style={styles.inputContainer}>
+                <IconSymbol
+                  ios_icon_name="lock.fill"
+                  android_material_icon_name="lock"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+                <TextInput
+                  style={[styles.input, { color: colors.text }]}
+                  placeholder="Mot de passe"
+                  placeholderTextColor={colors.textSecondary}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  editable={!loading}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.authButton, { backgroundColor: colors.primary }]}
+                onPress={handleAuth}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.authButtonText}>
+                    {isLogin ? 'Se connecter' : 'S\'inscrire'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.switchButton}
+                onPress={() => {
+                  setIsLogin(!isLogin);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                disabled={loading}
+              >
+                <Text style={[styles.switchButtonText, { color: colors.text }]}>
+                  {isLogin 
+                    ? 'Pas encore de compte ? ' 
+                    : 'Déjà un compte ? '}
+                  <Text style={{ color: colors.primary, fontWeight: '700' }}>
+                    {isLogin ? 'S\'inscrire' : 'Se connecter'}
+                  </Text>
                 </Text>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity
-              style={styles.switchButton}
-              onPress={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-              }}
-            >
-              <Text style={[styles.switchText, { color: colors.primary }]}>
-                {isSignUp
-                  ? 'Already have an account? Sign In'
-                  : "Don't have an account? Sign Up"}
+            <View style={[styles.infoCard, { backgroundColor: colors.highlight + '20' }]}>
+              <IconSymbol
+                ios_icon_name="info.circle.fill"
+                android_material_icon_name="info"
+                size={24}
+                color={colors.primary}
+              />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                Profitez d&apos;un essai gratuit de 30 jours avec accès complet à toutes les fonctionnalités !
               </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Info */}
-          <View style={styles.infoContainer}>
-            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              To use Supabase authentication, you need to:
-            </Text>
-            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              1. Enable Supabase in the editor
-            </Text>
-            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              2. Connect to your Supabase project
-            </Text>
-            <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              3. Update the credentials in utils/supabase.ts
-            </Text>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -183,86 +237,104 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
-  keyboardView: {
+  container: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 20,
+    paddingBottom: 40,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 40,
-    marginTop: 20,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 48 : 16,
+    paddingBottom: 16,
   },
   backButton: {
-    marginRight: 16,
-    padding: 8,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 40,
+    lineHeight: 22,
   },
   form: {
-    marginBottom: 40,
+    width: '100%',
+    gap: 16,
   },
   inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  input: {
-    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
+    gap: 12,
+    height: 56,
+  },
+  input: {
+    flex: 1,
     fontSize: 16,
-    borderWidth: 1,
+    height: '100%',
   },
-  errorContainer: {
-    backgroundColor: '#fee',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  errorText: {
-    color: '#c00',
-    fontSize: 14,
-  },
-  button: {
-    height: 50,
+  authButton: {
+    height: 56,
     borderRadius: 12,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 8,
+    boxShadow: '0px 4px 12px rgba(3, 169, 244, 0.3)',
+    elevation: 5,
   },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+  authButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
   switchButton: {
-    marginTop: 16,
+    paddingVertical: 12,
     alignItems: 'center',
   },
-  switchText: {
-    fontSize: 14,
-    fontWeight: '500',
+  switchButtonText: {
+    fontSize: 15,
   },
-  infoContainer: {
+  infoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
     borderRadius: 12,
-    backgroundColor: 'rgba(100, 100, 100, 0.1)',
+    gap: 12,
+    marginTop: 32,
   },
   infoText: {
+    flex: 1,
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 4,
   },
 });

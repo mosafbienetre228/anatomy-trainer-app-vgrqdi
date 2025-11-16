@@ -1,30 +1,36 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { useLanguage } from '@/contexts/LanguageContext';
+import * as Haptics from 'expo-haptics';
 
 export default function SubscriptionScreen() {
   const theme = useTheme();
   const { t } = useLanguage();
-  const [selectedPlan, setSelectedPlan] = useState<'free' | 'premium'>('free');
+  const [selectedPlan, setSelectedPlan] = useState<'trial' | 'premium'>('trial');
 
   const plans = [
     {
-      id: 'free',
-      name: t('free'),
+      id: 'trial',
+      name: 'Essai Gratuit',
       price: '0€',
-      period: '/mois',
+      period: '/30 jours',
       features: [
-        'Accès aux muscles de l\'épaule',
-        'Mode apprentissage de base',
-        'Suivi de progression limité',
+        'Accès complet à toutes les régions anatomiques',
+        'Mode jeu de cartes complet',
+        'Suivi de progression détaillé',
+        'Récompenses et badges',
+        'Support prioritaire',
+        'Contenu exclusif',
+        'Aucune carte de crédit requise',
       ],
-      color: colors.textSecondary,
+      color: colors.primary,
+      recommended: true,
     },
     {
       id: 'premium',
@@ -32,17 +38,46 @@ export default function SubscriptionScreen() {
       price: '9.99€',
       period: '/mois',
       features: [
-        'Accès à toutes les régions anatomiques',
-        'Mode jeu de cartes complet',
+        'Accès illimité à toutes les régions',
+        'Mode jeu de cartes avancé',
         'Suivi de progression détaillé',
-        'Récompenses et badges',
-        'Support prioritaire',
-        'Contenu exclusif',
+        'Récompenses et badges exclusifs',
+        'Support prioritaire 24/7',
+        'Contenu exclusif et mises à jour',
+        'Statistiques avancées',
+        'Mode hors ligne',
       ],
       color: colors.accent,
-      recommended: true,
     },
   ];
+
+  const handleSubscribe = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    
+    if (selectedPlan === 'trial') {
+      Alert.alert(
+        'Essai gratuit activé ! 🎉',
+        'Vous avez maintenant un accès complet à toutes les fonctionnalités pendant 30 jours. Profitez-en !',
+        [
+          {
+            text: 'Commencer',
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Paiement',
+        'Les fonctionnalités de paiement seront disponibles prochainement. En attendant, profitez de l\'essai gratuit !',
+        [
+          {
+            text: 'OK',
+            onPress: () => console.log('Payment info acknowledged'),
+          },
+        ]
+      );
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
@@ -69,16 +104,21 @@ export default function SubscriptionScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.infoCard, { backgroundColor: colors.highlight + '30' }]}>
+        <View style={[styles.infoCard, { backgroundColor: colors.primary + '20' }]}>
           <IconSymbol
-            ios_icon_name="info.circle.fill"
-            android_material_icon_name="info"
-            size={24}
-            color={colors.text}
+            ios_icon_name="gift.fill"
+            android_material_icon_name="card-giftcard"
+            size={32}
+            color={colors.primary}
           />
-          <Text style={[commonStyles.text, styles.infoText]}>
-            {t('subscriptionDesc')}
-          </Text>
+          <View style={styles.infoTextContainer}>
+            <Text style={[commonStyles.textBold, styles.infoTitle]}>
+              Essai gratuit de 30 jours
+            </Text>
+            <Text style={[commonStyles.text, styles.infoText]}>
+              Accès complet à toutes les fonctionnalités sans engagement
+            </Text>
+          </View>
         </View>
 
         {plans.map((plan, index) => (
@@ -90,19 +130,40 @@ export default function SubscriptionScreen() {
               selectedPlan === plan.id && styles.planCardSelected,
               selectedPlan === plan.id && { borderColor: plan.color, borderWidth: 2 },
             ]}
-            onPress={() => setSelectedPlan(plan.id as 'free' | 'premium')}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setSelectedPlan(plan.id as 'trial' | 'premium');
+            }}
             activeOpacity={0.7}
           >
             {plan.recommended && (
-              <View style={[styles.recommendedBadge, { backgroundColor: colors.accent }]}>
+              <View style={[styles.recommendedBadge, { backgroundColor: colors.primary }]}>
+                <IconSymbol
+                  ios_icon_name="star.fill"
+                  android_material_icon_name="star"
+                  size={14}
+                  color="#FFFFFF"
+                />
                 <Text style={styles.recommendedText}>Recommandé</Text>
               </View>
             )}
             
             <View style={styles.planHeader}>
-              <Text style={[commonStyles.subtitle, styles.planName]}>
-                {plan.name}
-              </Text>
+              <View style={styles.planTitleRow}>
+                <Text style={[commonStyles.subtitle, styles.planName]}>
+                  {plan.name}
+                </Text>
+                {selectedPlan === plan.id && (
+                  <View style={[styles.selectedBadge, { backgroundColor: plan.color }]}>
+                    <IconSymbol
+                      ios_icon_name="checkmark"
+                      android_material_icon_name="check"
+                      size={16}
+                      color="#FFFFFF"
+                    />
+                  </View>
+                )}
+              </View>
               <View style={styles.priceContainer}>
                 <Text style={[commonStyles.title, styles.planPrice]}>
                   {plan.price}
@@ -141,22 +202,73 @@ export default function SubscriptionScreen() {
               Paiement sécurisé
             </Text>
             <Text style={commonStyles.textSecondary}>
-              Paiement par monnaie numérique disponible
+              Paiement par monnaie numérique disponible prochainement
             </Text>
           </View>
         </View>
 
         <TouchableOpacity
-          style={[styles.subscribeButton, { backgroundColor: colors.accent }]}
+          style={[
+            styles.subscribeButton, 
+            { backgroundColor: selectedPlan === 'trial' ? colors.primary : colors.accent }
+          ]}
+          onPress={handleSubscribe}
           activeOpacity={0.8}
         >
           <Text style={styles.subscribeButtonText}>
-            {selectedPlan === 'free' ? 'Continuer avec le plan gratuit' : t('subscribe')}
+            {selectedPlan === 'trial' ? 'Commencer l\'essai gratuit' : 'S\'abonner maintenant'}
           </Text>
+          <IconSymbol
+            ios_icon_name="arrow.right"
+            android_material_icon_name="arrow-forward"
+            size={20}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
 
+        <View style={styles.benefitsSection}>
+          <Text style={[commonStyles.textBold, styles.benefitsTitle]}>
+            Pourquoi choisir Abinarth Formation ?
+          </Text>
+          <View style={styles.benefitsList}>
+            <View style={styles.benefitItem}>
+              <IconSymbol
+                ios_icon_name="brain.head.profile"
+                android_material_icon_name="psychology"
+                size={24}
+                color={colors.primary}
+              />
+              <Text style={commonStyles.text}>
+                Méthode d&apos;apprentissage scientifiquement prouvée
+              </Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <IconSymbol
+                ios_icon_name="chart.line.uptrend.xyaxis"
+                android_material_icon_name="trending-up"
+                size={24}
+                color={colors.primary}
+              />
+              <Text style={commonStyles.text}>
+                Suivi de progression en temps réel
+              </Text>
+            </View>
+            <View style={styles.benefitItem}>
+              <IconSymbol
+                ios_icon_name="person.2.fill"
+                android_material_icon_name="groups"
+                size={24}
+                color={colors.primary}
+              />
+              <Text style={commonStyles.text}>
+                Rejoignez des milliers d&apos;étudiants en médecine
+              </Text>
+            </View>
+          </View>
+        </View>
+
         <Text style={[commonStyles.textSecondary, styles.disclaimer]}>
-          * Les fonctionnalités de paiement seront disponibles prochainement
+          * L&apos;essai gratuit vous donne un accès complet pendant 30 jours. Aucune carte de crédit requise.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -200,12 +312,21 @@ const styles = StyleSheet.create({
   infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
+    padding: 20,
+    borderRadius: 16,
+    gap: 16,
+    boxShadow: '0px 4px 12px rgba(3, 169, 244, 0.2)',
+    elevation: 4,
+  },
+  infoTextContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  infoTitle: {
+    fontSize: 16,
   },
   infoText: {
-    flex: 1,
+    fontSize: 14,
   },
   planCard: {
     padding: 20,
@@ -216,27 +337,44 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   planCardSelected: {
-    boxShadow: '0px 4px 16px rgba(255, 64, 129, 0.3)',
+    boxShadow: '0px 4px 16px rgba(3, 169, 244, 0.3)',
     elevation: 6,
   },
   recommendedBadge: {
     position: 'absolute',
-    top: -8,
+    top: -10,
     right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.2)',
+    elevation: 4,
   },
   recommendedText: {
-    color: colors.card,
+    color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   planHeader: {
     gap: 8,
   },
+  planTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   planName: {
     marginBottom: 0,
+  },
+  selectedBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   priceContainer: {
     flexDirection: 'row',
@@ -275,21 +413,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   subscribeButton: {
-    padding: 16,
-    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
+    borderRadius: 12,
     marginTop: 8,
-    boxShadow: '0px 4px 12px rgba(255, 64, 129, 0.3)',
+    gap: 8,
+    boxShadow: '0px 4px 12px rgba(3, 169, 244, 0.3)',
     elevation: 5,
   },
   subscribeButtonText: {
-    color: colors.card,
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '700',
+  },
+  benefitsSection: {
+    marginTop: 16,
+    gap: 16,
+  },
+  benefitsTitle: {
+    fontSize: 18,
+    textAlign: 'center',
+  },
+  benefitsList: {
+    gap: 16,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    padding: 16,
+    backgroundColor: colors.border,
+    borderRadius: 12,
   },
   disclaimer: {
     textAlign: 'center',
     fontSize: 12,
     fontStyle: 'italic',
+    marginTop: 8,
   },
 });

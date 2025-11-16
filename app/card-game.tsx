@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions, Modal } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +16,9 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
+  FadeIn,
+  FadeOut,
+  ZoomIn,
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -48,6 +51,8 @@ export default function CardGameScreen() {
   const [selectedCard, setSelectedCard] = useState<AnswerCard | null>(null);
   const [score, setScore] = useState(0);
   const [gameStartTime] = useState(new Date());
+  const [showCongratsModal, setShowCongratsModal] = useState(false);
+  const [showFinalCongratsModal, setShowFinalCongratsModal] = useState(false);
 
   const characteristics: { key: CharacteristicKey; label: string }[] = [
     { key: 'definition', label: t('definition') },
@@ -107,9 +112,11 @@ export default function CardGameScreen() {
       if (placedCards.length + 1 === characteristics.length) {
         setTimeout(() => {
           if (currentMuscleIndex < selectedMuscles.length - 1) {
-            setCurrentMuscleIndex(currentMuscleIndex + 1);
-            setPlacedCards([]);
+            // Show congratulations for completing this muscle
+            setShowCongratsModal(true);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } else {
+            // Show final congratulations for completing all muscles
             handleGameComplete();
           }
         }, 500);
@@ -121,9 +128,20 @@ export default function CardGameScreen() {
     setSelectedCard(null);
   };
 
+  const handleContinueToNextMuscle = () => {
+    setShowCongratsModal(false);
+    setCurrentMuscleIndex(currentMuscleIndex + 1);
+    setPlacedCards([]);
+  };
+
   const handleGameComplete = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowFinalCongratsModal(true);
     console.log('Game completed! Score:', score);
+  };
+
+  const handleFinishGame = () => {
+    setShowFinalCongratsModal(false);
     router.back();
   };
 
@@ -270,6 +288,143 @@ export default function CardGameScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Congratulations Modal for completing a muscle */}
+      <Modal
+        visible={showCongratsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCongratsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View 
+            entering={ZoomIn.duration(400)}
+            style={[styles.modalContent, { backgroundColor: colors.card }]}
+          >
+            <View style={[styles.modalIconContainer, { backgroundColor: colors.success + '20' }]}>
+              <IconSymbol
+                ios_icon_name="checkmark.circle.fill"
+                android_material_icon_name="check-circle"
+                size={64}
+                color={colors.success}
+              />
+            </View>
+            
+            <Text style={[commonStyles.title, styles.modalTitle]}>
+              Félicitations ! 🎉
+            </Text>
+            
+            <Text style={[commonStyles.text, styles.modalText]}>
+              Vous avez complété le muscle {currentMuscle.name} avec succès !
+            </Text>
+            
+            <View style={styles.modalStats}>
+              <View style={styles.statItem}>
+                <Text style={[commonStyles.textBold, styles.statValue]}>{placedCards.length}</Text>
+                <Text style={commonStyles.textSecondary}>Cartes placées</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={[commonStyles.textBold, styles.statValue]}>{score}</Text>
+                <Text style={commonStyles.textSecondary}>Points</Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: colors.primary }]}
+              onPress={handleContinueToNextMuscle}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalButtonText}>
+                Continuer au muscle suivant
+              </Text>
+              <IconSymbol
+                ios_icon_name="arrow.right"
+                android_material_icon_name="arrow-forward"
+                size={20}
+                color="#FFFFFF"
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* Final Congratulations Modal for completing all muscles */}
+      <Modal
+        visible={showFinalCongratsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFinalCongratsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Animated.View 
+            entering={ZoomIn.duration(400)}
+            style={[styles.modalContent, { backgroundColor: colors.card }]}
+          >
+            <View style={[styles.modalIconContainer, { backgroundColor: colors.accent + '20' }]}>
+              <IconSymbol
+                ios_icon_name="star.fill"
+                android_material_icon_name="star"
+                size={64}
+                color={colors.accent}
+              />
+            </View>
+            
+            <Text style={[commonStyles.title, styles.modalTitle]}>
+              Bravo ! Module terminé ! 🏆
+            </Text>
+            
+            <Text style={[commonStyles.text, styles.modalText]}>
+              Vous avez complété tous les muscles de l&apos;épaule avec succès !
+            </Text>
+            
+            <View style={styles.modalStats}>
+              <View style={styles.statItem}>
+                <Text style={[commonStyles.textBold, styles.statValue]}>{selectedMuscles.length}</Text>
+                <Text style={commonStyles.textSecondary}>Muscles maîtrisés</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={[commonStyles.textBold, styles.statValue]}>{score}</Text>
+                <Text style={commonStyles.textSecondary}>Score total</Text>
+              </View>
+            </View>
+
+            <View style={[styles.achievementBanner, { backgroundColor: colors.highlight + '20' }]}>
+              <IconSymbol
+                ios_icon_name="trophy.fill"
+                android_material_icon_name="emoji-events"
+                size={32}
+                color={colors.accent}
+              />
+              <View style={styles.achievementText}>
+                <Text style={[commonStyles.textBold, styles.achievementTitle]}>
+                  Nouveau badge débloqué !
+                </Text>
+                <Text style={commonStyles.textSecondary}>
+                  Expert de l&apos;épaule
+                </Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: colors.accent }]}
+              onPress={handleFinishGame}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalButtonText}>
+                Terminer
+              </Text>
+              <IconSymbol
+                ios_icon_name="checkmark"
+                android_material_icon_name="check"
+                size={20}
+                color="#FFFFFF"
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -426,5 +581,96 @@ const styles = StyleSheet.create({
   cardContent: {
     fontSize: 12,
     lineHeight: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.3)',
+    elevation: 10,
+  },
+  modalIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  modalTitle: {
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalText: {
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  modalStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: colors.border,
+    borderRadius: 12,
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 28,
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: colors.textSecondary,
+    opacity: 0.3,
+  },
+  achievementBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    width: '100%',
+    marginBottom: 24,
+    gap: 16,
+  },
+  achievementText: {
+    flex: 1,
+  },
+  achievementTitle: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  modalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    gap: 8,
+    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
+    elevation: 5,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });

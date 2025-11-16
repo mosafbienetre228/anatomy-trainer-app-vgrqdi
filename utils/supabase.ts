@@ -4,19 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
- * SUPABASE SETUP INSTRUCTIONS
+ * SUPABASE CONFIGURATION
  * 
- * To connect your app to Supabase:
- * 
- * 1. Enable Supabase in the Natively editor by clicking the Supabase button
- * 2. Create a Supabase project at https://app.supabase.com if you don't have one
- * 3. Get your project credentials from Settings > API in your Supabase dashboard
- * 4. Create a .env file in the root of your project (copy from .env.example)
- * 5. Add your credentials to the .env file:
- *    EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
- *    EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
- * 
- * Features available:
+ * This app is connected to Supabase for:
  * - Authentication (Email/Password, OAuth providers)
  * - Database (PostgreSQL with real-time subscriptions)
  * - Storage (File uploads and downloads)
@@ -38,10 +28,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  *   .eq('column', 'value');
  */
 
-// Replace these with your actual Supabase project credentials
-// You can find these in your Supabase project settings at https://app.supabase.com
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+// Supabase project credentials
+const SUPABASE_URL = 'https://kfuqsnylkhqsdavkqnbl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdXFzbnlsa2hxc2RhdmtxbmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNjE2NjAsImV4cCI6MjA3ODgzNzY2MH0.NgLYJ4Xao4XWxGpEIpJUYX7ay7X9xWSmvs_d4PNhyl0';
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
