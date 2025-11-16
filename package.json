@@ -12,7 +12,8 @@
     "build:web": "expo export -p web && npx workbox generateSW workbox-config.js",
     "build:android": "expo prebuild -p android",
     "lint": "eslint .",
-    "reset": "rm -rf node_modules/.cache && rm -rf .expo && expo start --clear"
+    "reset": "rm -rf node_modules/.cache && rm -rf .expo && expo start --clear",
+    "clean": "rm -rf node_modules/.cache && rm -rf .expo && rm -rf .metro"
   },
   "dependencies": {
     "@babel/plugin-proposal-export-namespace-from": "^7.18.9",

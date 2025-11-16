@@ -24,10 +24,10 @@ config.transformer = {
   },
 };
 
-// Ensure source maps are generated
-config.serializer = {
-  ...config.serializer,
-  customSerializer: undefined,
-};
+// Remove the customSerializer configuration that was causing issues
+// Metro will use its default serializer which is correct for Expo
+if (config.serializer) {
+  delete config.serializer.customSerializer;
+}
 
 module.exports = config;
