@@ -25,20 +25,26 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log('SupabaseProvider: Initializing auth state');
     
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('SupabaseProvider: Error getting session:', error);
-      } else {
-        console.log('SupabaseProvider: Initial session loaded:', session ? 'authenticated' : 'not authenticated');
+    // Get initial session with error handling
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('SupabaseProvider: Error getting session:', error.message);
+        } else {
+          console.log('SupabaseProvider: Initial session loaded:', session ? 'authenticated' : 'not authenticated');
+          setSession(session);
+          setUser(session?.user ?? null);
+        }
+      } catch (error) {
+        console.error('SupabaseProvider: Exception in getSession:', error);
+      } finally {
+        setLoading(false);
       }
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    }).catch((error) => {
-      console.error('SupabaseProvider: Error in getSession:', error);
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const {
@@ -64,7 +70,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         password,
       });
       if (error) {
-        console.error('SupabaseProvider: Sign in error:', error);
+        console.error('SupabaseProvider: Sign in error:', error.message);
       } else {
         console.log('SupabaseProvider: Sign in successful');
       }
@@ -86,7 +92,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
         }
       });
       if (error) {
-        console.error('SupabaseProvider: Sign up error:', error);
+        console.error('SupabaseProvider: Sign up error:', error.message);
       } else {
         console.log('SupabaseProvider: Sign up successful');
       }
@@ -102,7 +108,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       console.log('SupabaseProvider: Attempting sign out');
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('SupabaseProvider: Sign out error:', error);
+        console.error('SupabaseProvider: Sign out error:', error.message);
       } else {
         console.log('SupabaseProvider: Sign out successful');
       }

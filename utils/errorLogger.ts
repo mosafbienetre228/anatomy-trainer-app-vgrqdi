@@ -1,207 +1,175 @@
-// Global error logging for runtime errors
 
 import { Platform } from "react-native";
 
-// Simple debouncing to prevent duplicate errors
-const recentErrors: { [key: string]: boolean } = {};
-const clearErrorAfterDelay = (errorKey: string) => {
-  setTimeout(() => delete recentErrors[errorKey], 100);
-};
+/**
+ * Enhanced error logger with better symbolication support
+ */
 
-// Function to send errors to parent window (React frontend)
-const sendErrorToParent = (level: string, message: string, data: any) => {
-  // Create a simple key to identify duplicate errors
-  const errorKey = `${level}:${message}:${JSON.stringify(data)}`;
+interface ErrorData {
+  message: string;
+  stack?: string;
+  componentStack?: string;
+  [key: string]: any;
+}
 
-  // Skip if we've seen this exact error recently
-  if (recentErrors[errorKey]) {
-    return;
+const errorCache = new Map<string, NodeJS.Timeout>();
+
+/**
+ * Clear error after a delay to prevent spam
+ */
+export function clearErrorAfterDelay(errorKey: string, delayMs: number = 5000) {
+  if (errorCache.has(errorKey)) {
+    clearTimeout(errorCache.get(errorKey));
   }
+  
+  const timeout = setTimeout(() => {
+    errorCache.delete(errorKey);
+  }, delayMs);
+  
+  errorCache.set(errorKey, timeout);
+}
 
-  // Mark this error as seen and schedule cleanup
-  recentErrors[errorKey] = true;
-  clearErrorAfterDelay(errorKey);
+/**
+ * Send error to parent window (for web debugging)
+ */
+export function sendErrorToParent(level: string, message: string, data?: ErrorData) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.parent !== window) {
+    try {
+      window.parent.postMessage(
+        {
+          type: 'error',
+          level,
+          message,
+          data,
+          timestamp: new Date().toISOString(),
+        },
+        '*'
+      );
+    } catch (error) {
+      console.error('Failed to send error to parent:', error);
+    }
+  }
+}
 
+/**
+ * Extract source location from error stack
+ */
+export function extractSourceLocation(stack: string): { file: string; line: number; column: number } | null {
   try {
-    if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-      window.parent.postMessage({
-        type: 'EXPO_ERROR',
-        level: level,
-        message: message,
-        data: data,
-        timestamp: new Date().toISOString(),
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-        source: 'expo-template'
-      }, '*');
-    } else {
-      // Fallback to console if no parent window
-      console.error('🚨 ERROR (no parent):', level, message, data);
+    // Try to parse stack trace
+    const stackLines = stack.split('\n');
+    for (const line of stackLines) {
+      // Match patterns like: at functionName (file.js:123:45)
+      const match = line.match(/\((.+):(\d+):(\d+)\)/) || line.match(/at (.+):(\d+):(\d+)/);
+      if (match) {
+        return {
+          file: match[1],
+          line: parseInt(match[2], 10),
+          column: parseInt(match[3], 10),
+        };
+      }
     }
   } catch (error) {
-    console.error('❌ Failed to send error to parent:', error);
+    console.error('Failed to extract source location:', error);
   }
-};
+  return null;
+}
 
-// Function to extract meaningful source location from stack trace
-const extractSourceLocation = (stack: string): string => {
-  if (!stack) return '';
-
-  // Look for various patterns in the stack trace
-  const patterns = [
-    // Pattern for app files: app/filename.tsx:line:column
-    /at .+\/(app\/[^:)]+):(\d+):(\d+)/,
-    // Pattern for components: components/filename.tsx:line:column
-    /at .+\/(components\/[^:)]+):(\d+):(\d+)/,
-    // Pattern for any .tsx/.ts files
-    /at .+\/([^/]+\.tsx?):(\d+):(\d+)/,
-    // Pattern for bundle files with source maps
-    /at .+\/([^/]+\.bundle[^:]*):(\d+):(\d+)/,
-    // Pattern for any JavaScript file
-    /at .+\/([^/\s:)]+\.[jt]sx?):(\d+):(\d+)/
-  ];
-
-  for (const pattern of patterns) {
-    const match = stack.match(pattern);
-    if (match) {
-      return ` | Source: ${match[1]}:${match[2]}:${match[3]}`;
+/**
+ * Get caller information from stack trace
+ */
+export function getCallerInfo(): string {
+  try {
+    const error = new Error();
+    const stack = error.stack || '';
+    const stackLines = stack.split('\n');
+    
+    // Skip first 3 lines (Error, getCallerInfo, and the actual caller)
+    if (stackLines.length > 3) {
+      return stackLines[3].trim();
     }
+  } catch (error) {
+    console.error('Failed to get caller info:', error);
   }
+  return 'Unknown caller';
+}
 
-  // If no specific pattern matches, try to find any file reference
-  const fileMatch = stack.match(/at .+\/([^/\s:)]+\.[jt]sx?):(\d+)/);
-  if (fileMatch) {
-    return ` | Source: ${fileMatch[1]}:${fileMatch[2]}`;
+/**
+ * Log error with enhanced context
+ */
+export function logError(message: string, error?: Error | unknown, context?: Record<string, any>) {
+  const timestamp = new Date().toISOString();
+  const caller = getCallerInfo();
+  
+  console.error('=== ERROR LOG ===');
+  console.error('Timestamp:', timestamp);
+  console.error('Message:', message);
+  console.error('Caller:', caller);
+  
+  if (context) {
+    console.error('Context:', JSON.stringify(context, null, 2));
   }
-
-  return '';
-};
-
-// Function to get caller information from stack trace
-const getCallerInfo = (): string => {
-  const stack = new Error().stack || '';
-  const lines = stack.split('\n');
-
-  // Skip the first few lines (Error, getCallerInfo, console override)
-  for (let i = 3; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.indexOf('app/') !== -1 || line.indexOf('components/') !== -1 || line.indexOf('.tsx') !== -1 || line.indexOf('.ts') !== -1) {
-      const match = line.match(/at .+\/([^/\s:)]+\.[jt]sx?):(\d+):(\d+)/);
-      if (match) {
-        return ` | Called from: ${match[1]}:${match[2]}:${match[3]}`;
+  
+  if (error) {
+    if (error instanceof Error) {
+      console.error('Error:', error.message);
+      console.error('Stack:', error.stack);
+      
+      const location = extractSourceLocation(error.stack || '');
+      if (location) {
+        console.error('Location:', `${location.file}:${location.line}:${location.column}`);
       }
+    } else {
+      console.error('Error:', JSON.stringify(error, null, 2));
     }
   }
+  
+  console.error('=================');
+  
+  // Send to parent for web debugging
+  sendErrorToParent('error', message, {
+    message,
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+    context,
+    caller,
+  });
+}
 
-  return '';
-};
-
-export const setupErrorLogging = () => {
-  // Capture unhandled errors in web environment
-  if (typeof window !== 'undefined') {
-    // Override window.onerror to catch JavaScript errors
-    window.onerror = (message, source, lineno, colno, error) => {
-      const sourceFile = source ? source.split('/').pop() : 'unknown';
-      const errorData = {
-        message: message,
-        source: `${sourceFile}:${lineno}:${colno}`,
-        line: lineno,
-        column: colno,
-        error: error?.stack || error,
-        timestamp: new Date().toISOString()
-      };
-
-      console.error('🚨 RUNTIME ERROR:', errorData);
-      sendErrorToParent('error', 'JavaScript Runtime Error', errorData);
-      return false; // Don't prevent default error handling
-    };
-    // check if platform is web
-    if (Platform.OS === 'web') {
-      // Capture unhandled promise rejections
-      window.addEventListener('unhandledrejection', (event) => {
-          const errorData = {
-          reason: event.reason,
-          timestamp: new Date().toISOString()
-        };
-
-        console.error('🚨 UNHANDLED PROMISE REJECTION:', errorData);
-        sendErrorToParent('error', 'Unhandled Promise Rejection', errorData);
-      });
-    }
+/**
+ * Log warning with context
+ */
+export function logWarning(message: string, context?: Record<string, any>) {
+  const timestamp = new Date().toISOString();
+  const caller = getCallerInfo();
+  
+  console.warn('=== WARNING ===');
+  console.warn('Timestamp:', timestamp);
+  console.warn('Message:', message);
+  console.warn('Caller:', caller);
+  
+  if (context) {
+    console.warn('Context:', JSON.stringify(context, null, 2));
   }
+  
+  console.warn('===============');
+  
+  sendErrorToParent('warning', message, { message, context, caller });
+}
 
-  // Store original console methods
-  const originalConsoleError = console.error;
-  const originalConsoleWarn = console.warn;
-  const originalConsoleLog = console.log;
-
-  // UNCOMMENT BELOW CODE TO GET MORE SENSITIVE ERROR LOGGING (usually many errors triggered per 1 uncaught runtime error)
-
-  // Override console.error to capture more detailed information
-  // console.error = (...args: any[]) => {
-  //   const stack = new Error().stack || '';
-  //   const sourceInfo = extractSourceLocation(stack);
-  //   const callerInfo = getCallerInfo();
-
-  //   // Create enhanced message with source information
-  //   const enhancedMessage = args.join(' ') + sourceInfo + callerInfo;
-
-  //   // Add timestamp and make it stand out in Metro logs
-  //   originalConsoleError('🔥🔥🔥 ERROR:', new Date().toISOString(), enhancedMessage);
-
-  //   // Also send to parent
-  //   sendErrorToParent('error', 'Console Error', enhancedMessage);
-  // };
-
-  // Override console.warn to capture warnings with source location
-  // console.warn = (...args: any[]) => {
-  //   const stack = new Error().stack || '';
-  //   const sourceInfo = extractSourceLocation(stack);
-  //   const callerInfo = getCallerInfo();
-
-  //   // Create enhanced message with source information
-  //   const enhancedMessage = args.join(' ') + sourceInfo + callerInfo;
-
-  //   originalConsoleWarn('⚠️ WARNING:', new Date().toISOString(), enhancedMessage);
-
-  //   // Also send to parent
-  //   sendErrorToParent('warn', 'Console Warning', enhancedMessage);
-  // };
-
-  // // Also override console.log to catch any logs that might contain error information
-  // console.log = (...args: any[]) => {
-  //   const message = args.join(' ');
-
-  //   // Check if this log message contains warning/error keywords
-  //   if (message.indexOf('deprecated') !== -1 || message.indexOf('warning') !== -1 || message.indexOf('error') !== -1) {
-  //     const stack = new Error().stack || '';
-  //     const sourceInfo = extractSourceLocation(stack);
-  //     const callerInfo = getCallerInfo();
-
-  //     const enhancedMessage = message + sourceInfo + callerInfo;
-
-  //     originalConsoleLog('📝 LOG (potential issue):', new Date().toISOString(), enhancedMessage);
-  //     sendErrorToParent('info', 'Console Log (potential issue)', enhancedMessage);
-  //   } else {
-  //     // Normal log, just pass through
-  //     originalConsoleLog(...args);
-  //   }
-  // };
-
-  // Try to intercept React Native warnings at a lower level
-  if (typeof window !== 'undefined' && (window as any).__DEV__) {
-    // Override React's warning system if available
-    const originalWarn = (window as any).console?.warn || console.warn;
-
-    // Monkey patch any React warning functions
-    if ((window as any).React && (window as any).React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED) {
-      const internals = (window as any).React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
-      if (internals.ReactDebugCurrentFrame) {
-        const originalGetStackAddendum = internals.ReactDebugCurrentFrame.getStackAddendum;
-        internals.ReactDebugCurrentFrame.getStackAddendum = function() {
-          const stack = originalGetStackAddendum ? originalGetStackAddendum.call(this) : '';
-          return stack + ' | Enhanced by error logger';
-        };
-      }
-    }
+/**
+ * Log info with context
+ */
+export function logInfo(message: string, context?: Record<string, any>) {
+  const timestamp = new Date().toISOString();
+  
+  console.log('=== INFO ===');
+  console.log('Timestamp:', timestamp);
+  console.log('Message:', message);
+  
+  if (context) {
+    console.log('Context:', JSON.stringify(context, null, 2));
   }
-};
+  
+  console.log('============');
+}

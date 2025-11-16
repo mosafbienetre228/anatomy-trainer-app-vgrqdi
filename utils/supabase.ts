@@ -1,5 +1,4 @@
 
-import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -35,8 +34,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Validate URL format before creating client
 function validateSupabaseUrl(url: string): boolean {
   try {
-    const urlObj = new URL(url);
-    return urlObj.protocol === 'https:' && urlObj.hostname.includes('supabase.co');
+    // Use a simple regex check instead of URL constructor to avoid polyfill issues
+    const urlPattern = /^https:\/\/[a-z0-9-]+\.supabase\.co$/i;
+    return urlPattern.test(url);
   } catch (error) {
     console.error('Invalid Supabase URL:', error);
     return false;

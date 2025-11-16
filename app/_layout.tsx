@@ -1,5 +1,4 @@
 
-import 'react-native-url-polyfill/auto';
 import React, { useEffect } from "react";
 import { Stack } from "expo-router";
 import { SystemBars } from "react-native-edge-to-edge";
@@ -13,13 +12,13 @@ import {
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SupabaseProvider } from "@/contexts/SupabaseContext";
-import "react-native-reanimated";
 import { useNetworkState } from "expo-network";
 import * as SplashScreen from "expo-splash-screen";
 import { useColorScheme } from "react-native";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "@/styles/commonStyles";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch((error) => {
@@ -91,98 +90,100 @@ export default function RootLayout() {
   console.log('RootLayout: Rendering with theme:', colorScheme);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={theme}>
-        <SupabaseProvider>
-          <LanguageProvider>
-            <WidgetProvider>
-              <SystemBars style="auto" />
-              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  animation: 'slide_from_right',
-                  contentStyle: {
-                    backgroundColor: theme.colors.background,
-                  },
-                }}
-              >
-                <Stack.Screen 
-                  name="(tabs)" 
-                  options={{ 
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider value={theme}>
+          <SupabaseProvider>
+            <LanguageProvider>
+              <WidgetProvider>
+                <SystemBars style="auto" />
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                <Stack
+                  screenOptions={{
                     headerShown: false,
-                    animation: 'none',
-                  }} 
-                />
-                <Stack.Screen
-                  name="auth"
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card',
                     animation: 'slide_from_right',
+                    contentStyle: {
+                      backgroundColor: theme.colors.background,
+                    },
                   }}
-                />
-                <Stack.Screen
-                  name="muscle-list"
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
-                />
-                <Stack.Screen
-                  name="muscle-detail"
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
-                />
-                <Stack.Screen
-                  name="subscription"
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
-                />
-                <Stack.Screen
-                  name="card-game"
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card',
-                    animation: 'slide_from_right',
-                  }}
-                />
-                <Stack.Screen
-                  name="modal"
-                  options={{
-                    presentation: "modal",
-                    headerTitle: "Modal",
-                  }}
-                />
-                <Stack.Screen
-                  name="formsheet"
-                  options={{
-                    presentation: "formSheet",
-                    headerTitle: "Form Sheet",
-                    sheetAllowedDetents: [0.5, 1],
-                    sheetGrabberVisible: true,
-                  }}
-                />
-                <Stack.Screen
-                  name="transparent-modal"
-                  options={{
-                    presentation: "transparentModal",
-                    animation: "fade",
-                    headerShown: false,
-                  }}
-                />
-              </Stack>
-            </WidgetProvider>
-          </LanguageProvider>
-        </SupabaseProvider>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+                >
+                  <Stack.Screen 
+                    name="(tabs)" 
+                    options={{ 
+                      headerShown: false,
+                      animation: 'none',
+                    }} 
+                  />
+                  <Stack.Screen
+                    name="auth"
+                    options={{ 
+                      headerShown: false,
+                      presentation: 'card',
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="muscle-list"
+                    options={{ 
+                      headerShown: false,
+                      presentation: 'card',
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="muscle-detail"
+                    options={{ 
+                      headerShown: false,
+                      presentation: 'card',
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="subscription"
+                    options={{ 
+                      headerShown: false,
+                      presentation: 'card',
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="card-game"
+                    options={{ 
+                      headerShown: false,
+                      presentation: 'card',
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen
+                    name="modal"
+                    options={{
+                      presentation: "modal",
+                      headerTitle: "Modal",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="formsheet"
+                    options={{
+                      presentation: "formSheet",
+                      headerTitle: "Form Sheet",
+                      sheetAllowedDetents: [0.5, 1],
+                      sheetGrabberVisible: true,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="transparent-modal"
+                    options={{
+                      presentation: "transparentModal",
+                      animation: "fade",
+                      headerShown: false,
+                    }}
+                  />
+                </Stack>
+              </WidgetProvider>
+            </LanguageProvider>
+          </SupabaseProvider>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

@@ -35,6 +35,13 @@
     "plugins": [
       "expo-font",
       "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1a1a2e",
+          "imageWidth": 200
+        }
+      ],
       "expo-web-browser"
     ],
     "scheme": "abinarth",
