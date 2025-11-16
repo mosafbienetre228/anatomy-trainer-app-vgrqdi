@@ -66,10 +66,12 @@ export default function CardGameScreen() {
   ];
 
   useEffect(() => {
+    console.log('CardGameScreen: Initializing game');
     initializeGame();
   }, []);
 
   const initializeGame = () => {
+    console.log('CardGameScreen: Setting up game with 5 muscles');
     const musclesToStudy = shoulderMuscles.slice(0, 5);
     setSelectedMuscles(musclesToStudy);
     
@@ -87,41 +89,56 @@ export default function CardGameScreen() {
     });
     
     const shuffled = cards.sort(() => Math.random() - 0.5);
+    console.log('CardGameScreen: Created', shuffled.length, 'answer cards');
     setAnswerCards(shuffled);
   };
 
   const handleCardSelect = (card: AnswerCard) => {
+    console.log('CardGameScreen: Card selected:', card.label);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedCard(card);
   };
 
   const handlePlaceCard = (characteristic: CharacteristicKey) => {
-    if (!selectedCard) return;
+    if (!selectedCard) {
+      console.log('CardGameScreen: No card selected');
+      return;
+    }
     
     const currentMuscle = selectedMuscles[currentMuscleIndex];
     const isCorrect = selectedCard.muscleId === currentMuscle.id && 
                      selectedCard.characteristic === characteristic;
     
+    console.log('CardGameScreen: Placing card', selectedCard.label, 'in', characteristic, '- Correct:', isCorrect);
+    
     if (isCorrect) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
-      setPlacedCards([...placedCards, { characteristic, card: selectedCard }]);
+      const newPlacedCards = [...placedCards, { characteristic, card: selectedCard }];
+      setPlacedCards(newPlacedCards);
       setAnswerCards(answerCards.filter(c => c.id !== selectedCard.id));
       setScore(score + 10);
       
-      if (placedCards.length + 1 === characteristics.length) {
+      console.log('CardGameScreen: Placed cards:', newPlacedCards.length, '/', characteristics.length);
+      
+      // Check if muscle is complete
+      if (newPlacedCards.length === characteristics.length) {
+        console.log('CardGameScreen: Muscle complete! Current index:', currentMuscleIndex, '/', selectedMuscles.length - 1);
         setTimeout(() => {
           if (currentMuscleIndex < selectedMuscles.length - 1) {
             // Show congratulations for completing this muscle
+            console.log('CardGameScreen: Showing muscle completion modal');
             setShowCongratsModal(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } else {
             // Show final congratulations for completing all muscles
+            console.log('CardGameScreen: Showing final completion modal');
             handleGameComplete();
           }
         }, 500);
       }
     } else {
+      console.log('CardGameScreen: Incorrect placement');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
     
@@ -129,18 +146,20 @@ export default function CardGameScreen() {
   };
 
   const handleContinueToNextMuscle = () => {
+    console.log('CardGameScreen: Continuing to next muscle');
     setShowCongratsModal(false);
     setCurrentMuscleIndex(currentMuscleIndex + 1);
     setPlacedCards([]);
   };
 
   const handleGameComplete = () => {
+    console.log('CardGameScreen: Game completed! Final score:', score);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowFinalCongratsModal(true);
-    console.log('Game completed! Score:', score);
   };
 
   const handleFinishGame = () => {
+    console.log('CardGameScreen: Finishing game and returning');
     setShowFinalCongratsModal(false);
     router.back();
   };
@@ -148,6 +167,7 @@ export default function CardGameScreen() {
   const currentMuscle = selectedMuscles[currentMuscleIndex];
 
   if (!currentMuscle) {
+    console.log('CardGameScreen: No current muscle, returning null');
     return null;
   }
 
@@ -155,7 +175,10 @@ export default function CardGameScreen() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity 
-          onPress={() => router.back()}
+          onPress={() => {
+            console.log('CardGameScreen: Back button pressed');
+            router.back();
+          }}
           style={styles.backButton}
         >
           <IconSymbol
@@ -294,7 +317,10 @@ export default function CardGameScreen() {
         visible={showCongratsModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowCongratsModal(false)}
+        onRequestClose={() => {
+          console.log('CardGameScreen: Congrats modal close requested');
+          setShowCongratsModal(false);
+        }}
       >
         <View style={styles.modalOverlay}>
           <Animated.View 
@@ -320,7 +346,7 @@ export default function CardGameScreen() {
             
             <View style={styles.modalStats}>
               <View style={styles.statItem}>
-                <Text style={[commonStyles.textBold, styles.statValue]}>{placedCards.length}</Text>
+                <Text style={[commonStyles.textBold, styles.statValue]}>{characteristics.length}</Text>
                 <Text style={commonStyles.textSecondary}>Cartes placées</Text>
               </View>
               <View style={styles.statDivider} />
@@ -354,7 +380,10 @@ export default function CardGameScreen() {
         visible={showFinalCongratsModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowFinalCongratsModal(false)}
+        onRequestClose={() => {
+          console.log('CardGameScreen: Final congrats modal close requested');
+          setShowFinalCongratsModal(false);
+        }}
       >
         <View style={styles.modalOverlay}>
           <Animated.View 

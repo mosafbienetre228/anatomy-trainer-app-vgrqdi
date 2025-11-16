@@ -33,13 +33,27 @@ const SUPABASE_URL = 'https://kfuqsnylkhqsdavkqnbl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtmdXFzbnlsa2hxc2RhdmtxbmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyNjE2NjAsImV4cCI6MjA3ODgzNzY2MH0.NgLYJ4Xao4XWxGpEIpJUYX7ay7X9xWSmvs_d4PNhyl0';
 
 // Validate URL format before creating client
-if (!SUPABASE_URL || !SUPABASE_URL.startsWith('https://')) {
-  throw new Error('Invalid Supabase URL. Must start with https://');
+function validateSupabaseUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'https:' && urlObj.hostname.includes('supabase.co');
+  } catch (error) {
+    console.error('Invalid Supabase URL:', error);
+    return false;
+  }
+}
+
+if (!SUPABASE_URL || !validateSupabaseUrl(SUPABASE_URL)) {
+  console.error('Invalid Supabase URL configuration');
+  throw new Error('Invalid Supabase URL. Must be a valid HTTPS URL ending with supabase.co');
 }
 
 if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.length < 20) {
+  console.error('Invalid Supabase anon key configuration');
   throw new Error('Invalid Supabase anon key');
 }
+
+console.log('Initializing Supabase client with URL:', SUPABASE_URL);
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -50,3 +64,5 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: false,
   },
 });
+
+console.log('Supabase client initialized successfully');

@@ -21,7 +21,10 @@ import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "@/styles/commonStyles";
 
-SplashScreen.preventAutoHideAsync();
+// Prevent the splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync().catch((error) => {
+  console.error('Error preventing splash screen auto-hide:', error);
+});
 
 const CustomLightTheme: Theme = {
   ...DefaultTheme,
@@ -52,27 +55,40 @@ const CustomDarkTheme: Theme = {
 export default function RootLayout() {
   const { isConnected } = useNetworkState();
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   useEffect(() => {
+    if (error) {
+      console.error('Error loading fonts:', error);
+    }
+  }, [error]);
+
+  useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      console.log('Fonts loaded, hiding splash screen');
+      SplashScreen.hideAsync().catch((error) => {
+        console.error('Error hiding splash screen:', error);
+      });
     }
   }, [loaded]);
 
   useEffect(() => {
     if (isConnected === false) {
       console.log('No internet connection detected');
+    } else if (isConnected === true) {
+      console.log('Internet connection available');
     }
   }, [isConnected]);
 
   if (!loaded) {
+    console.log('Waiting for fonts to load...');
     return null;
   }
 
   const theme = colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme;
+  console.log('RootLayout: Rendering with theme:', colorScheme);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
