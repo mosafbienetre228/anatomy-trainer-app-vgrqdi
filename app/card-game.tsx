@@ -24,17 +24,25 @@ import { colors, commonStyles } from '@/styles/commonStyles';
 
 type CharacteristicKey = 'definition' | 'origin' | 'path' | 'termination' | 'innervation' | 'action' | 'relations' | 'clinicalApplications';
 
+interface AnswerOption {
+  id: string;
+  content: string;
+  isCorrect: boolean;
+  muscleId: string;
+}
+
 interface AnswerCard {
   id: string;
   muscleId: string;
   characteristic: CharacteristicKey;
-  content: string;
+  options: AnswerOption[];
   label: string;
 }
 
 interface PlacedCard {
   characteristic: CharacteristicKey;
   card: AnswerCard;
+  selectedOption: AnswerOption;
 }
 
 const CARD_WIDTH = Dimensions.get('window').width - 40;
@@ -50,6 +58,7 @@ export default function CardGameScreen() {
   const [availableCards, setAvailableCards] = useState<AnswerCard[]>([]);
   const [placedCards, setPlacedCards] = useState<PlacedCard[]>([]);
   const [selectedCard, setSelectedCard] = useState<AnswerCard | null>(null);
+  const [selectedOption, setSelectedOption] = useState<AnswerOption | null>(null);
   const [showCongrats, setShowCongrats] = useState(false);
   const [showGameComplete, setShowGameComplete] = useState(false);
 
@@ -67,68 +76,71 @@ export default function CardGameScreen() {
     muscleImageOpacity.value = withSpring(progress);
   }, [placedCards.length]);
 
+  const generateWrongOptions = (correctContent: string, characteristic: CharacteristicKey, currentMuscleId: string): string[] => {
+    // Get wrong answers from other muscles
+    const otherMuscles = shoulderMuscles.filter(m => m.id !== currentMuscleId);
+    const wrongOptions: string[] = [];
+    
+    // Shuffle other muscles
+    const shuffled = [...otherMuscles].sort(() => Math.random() - 0.5);
+    
+    // Take 2 wrong answers
+    for (let i = 0; i < Math.min(2, shuffled.length); i++) {
+      const wrongContent = shuffled[i][characteristic];
+      if (wrongContent && wrongContent !== correctContent) {
+        wrongOptions.push(wrongContent);
+      }
+    }
+    
+    return wrongOptions;
+  };
+
   const initializeGame = () => {
     console.log('Initializing card game...');
     const currentMuscle = shoulderMuscles[currentMuscleIndex];
     
-    const cards: AnswerCard[] = [
-      {
-        id: `${currentMuscle.id}-definition`,
-        muscleId: currentMuscle.id,
-        characteristic: 'definition',
-        content: currentMuscle.definition,
-        label: 'Définition',
-      },
-      {
-        id: `${currentMuscle.id}-origin`,
-        muscleId: currentMuscle.id,
-        characteristic: 'origin',
-        content: currentMuscle.origin,
-        label: 'Origine',
-      },
-      {
-        id: `${currentMuscle.id}-path`,
-        muscleId: currentMuscle.id,
-        characteristic: 'path',
-        content: currentMuscle.path,
-        label: 'Trajet',
-      },
-      {
-        id: `${currentMuscle.id}-termination`,
-        muscleId: currentMuscle.id,
-        characteristic: 'termination',
-        content: currentMuscle.termination,
-        label: 'Terminaison',
-      },
-      {
-        id: `${currentMuscle.id}-innervation`,
-        muscleId: currentMuscle.id,
-        characteristic: 'innervation',
-        content: currentMuscle.innervation,
-        label: 'Innervation',
-      },
-      {
-        id: `${currentMuscle.id}-action`,
-        muscleId: currentMuscle.id,
-        characteristic: 'action',
-        content: currentMuscle.action,
-        label: 'Action',
-      },
-      {
-        id: `${currentMuscle.id}-relations`,
-        muscleId: currentMuscle.id,
-        characteristic: 'relations',
-        content: currentMuscle.relations,
-        label: 'Rapports',
-      },
-      {
-        id: `${currentMuscle.id}-clinicalApplications`,
-        muscleId: currentMuscle.id,
-        characteristic: 'clinicalApplications',
-        content: currentMuscle.clinicalApplications,
-        label: 'Applications cliniques',
-      },
+    const characteristics: CharacteristicKey[] = [
+      'definition',
+      'origin',
+      'path',
+      'termination',
+      'innervation',
+      'action',
+      'relations',
+      'clinicalApplications',
     ];
+
+    const cards: AnswerCard[] = characteristics.map(char => {
+      const correctContent = currentMuscle[char];
+      const wrongOptions = generateWrongOptions(correctContent, char, currentMuscle.id);
+      
+      // Create options array with correct answer and 2 wrong answers
+      const options: AnswerOption[] = [
+        {
+          id: `${currentMuscle.id}-${char}-correct`,
+          content: correctContent,
+          isCorrect: true,
+          muscleId: currentMuscle.id,
+        },
+        ...wrongOptions.map((wrongContent, index) => ({
+          id: `${currentMuscle.id}-${char}-wrong-${index}`,
+          content: wrongContent,
+          isCorrect: false,
+          muscleId: currentMuscle.id,
+        }))
+      ];
+
+      // Shuffle options
+      const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+
+      return {
+        id: `${currentMuscle.id}-${char}`,
+        muscleId: currentMuscle.id,
+        characteristic: char,
+        options: shuffledOptions,
+        label: getCharacteristicLabel(char),
+      };
+    });
 
     // Shuffle cards using Fisher-Yates algorithm for better randomization
     const shuffled = [...cards];
@@ -141,7 +153,22 @@ export default function CardGameScreen() {
     setAvailableCards(shuffled);
     setPlacedCards([]);
     setSelectedCard(null);
+    setSelectedOption(null);
     muscleImageOpacity.value = 0;
+  };
+
+  const getCharacteristicLabel = (char: CharacteristicKey): string => {
+    const labels = {
+      definition: 'Définition',
+      origin: 'Origine',
+      path: 'Trajet',
+      termination: 'Terminaison',
+      innervation: 'Innervation',
+      action: 'Action',
+      relations: 'Rapports',
+      clinicalApplications: 'Applications cliniques',
+    };
+    return labels[char];
   };
 
   const handleCardSelect = (card: AnswerCard) => {
@@ -150,6 +177,7 @@ export default function CardGameScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSelectedCard(card);
+    setSelectedOption(null); // Reset option selection when selecting a new card
     
     scale.value = withSequence(
       withSpring(1.1),
@@ -157,21 +185,34 @@ export default function CardGameScreen() {
     );
   };
 
+  const handleOptionSelect = (option: AnswerOption) => {
+    console.log('Option selected:', option.content.substring(0, 30) + '...');
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setSelectedOption(option);
+  };
+
   const handlePlaceCard = (characteristic: CharacteristicKey) => {
-    if (!selectedCard) {
-      console.log('No card selected');
+    if (!selectedCard || !selectedOption) {
+      console.log('No card or option selected');
       return;
     }
 
-    if (selectedCard.characteristic === characteristic) {
+    if (selectedCard.characteristic === characteristic && selectedOption.isCorrect) {
       console.log('Correct placement!');
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
 
-      setPlacedCards([...placedCards, { characteristic, card: selectedCard }]);
+      setPlacedCards([...placedCards, { 
+        characteristic, 
+        card: selectedCard,
+        selectedOption: selectedOption 
+      }]);
       setAvailableCards(availableCards.filter(c => c.id !== selectedCard.id));
       setSelectedCard(null);
+      setSelectedOption(null);
 
       rotation.value = withSequence(
         withTiming(360, { duration: 500 }),
@@ -337,7 +378,7 @@ export default function CardGameScreen() {
           </Text>
         </View>
 
-        {/* Muscle Image Formation - Shows as cards are placed */}
+        {/* Muscle Image Formation - Progressive drawing as cards are placed */}
         <Animated.View style={[styles.muscleImageContainer, muscleImageStyle]}>
           <View style={[styles.muscleImageCard, {
             backgroundColor: isDark ? colors.darkCard : colors.card,
@@ -360,7 +401,7 @@ export default function CardGameScreen() {
                 {currentMuscle.name}
               </Text>
               <Text style={[styles.muscleImageSubtext, { color: colors.textSecondary }]}>
-                Anatomie complète
+                Dessin progressif: {progressPercentage}%
               </Text>
             </View>
           </View>
@@ -391,7 +432,7 @@ export default function CardGameScreen() {
             </Text>
           </View>
 
-          {/* Characteristic slots arranged around the center */}
+          {/* Characteristic slots arranged around the center with exact anatomy icons */}
           <View style={styles.slotsContainer}>
             {characteristics.map((char, index) => {
               const placedCard = placedCards.find(p => p.characteristic === char);
@@ -421,9 +462,9 @@ export default function CardGameScreen() {
                     >
                       <View style={[styles.placedCardIcon, { backgroundColor: charColor }]}>
                         <IconSymbol
-                          ios_icon_name="checkmark"
-                          android_material_icon_name="check"
-                          size={16}
+                          ios_icon_name={charIcon.ios}
+                          android_material_icon_name={charIcon.android}
+                          size={20}
                           color="#FFFFFF"
                         />
                       </View>
@@ -434,24 +475,18 @@ export default function CardGameScreen() {
                   ) : (
                     <View style={styles.emptySlotContent}>
                       <View style={[styles.emptySlotIcon, { 
-                        borderColor: isDark ? colors.darkBorder : colors.border 
+                        borderColor: charColor,
+                        backgroundColor: charColor + '10',
                       }]}>
                         <IconSymbol
                           ios_icon_name={charIcon.ios}
                           android_material_icon_name={charIcon.android}
-                          size={20}
-                          color={colors.textSecondary}
+                          size={24}
+                          color={charColor}
                         />
                       </View>
                       <Text style={[styles.slotLabel, { color: colors.textSecondary }]}>
-                        {char === 'definition' && 'Définition'}
-                        {char === 'origin' && 'Origine'}
-                        {char === 'path' && 'Trajet'}
-                        {char === 'termination' && 'Terminaison'}
-                        {char === 'innervation' && 'Innervation'}
-                        {char === 'action' && 'Action'}
-                        {char === 'relations' && 'Rapports'}
-                        {char === 'clinicalApplications' && 'Applications'}
+                        {getCharacteristicLabel(char)}
                       </Text>
                     </View>
                   )}
@@ -461,7 +496,7 @@ export default function CardGameScreen() {
           </View>
         </View>
 
-        {/* Available Cards */}
+        {/* Available Cards with Multiple Choice Options */}
         <View style={styles.cardsSection}>
           <View style={styles.cardsSectionHeader}>
             <Text style={[styles.sectionTitle, { 
@@ -516,19 +551,81 @@ export default function CardGameScreen() {
                       <IconSymbol
                         ios_icon_name={charIcon.ios}
                         android_material_icon_name={charIcon.android}
-                        size={20}
+                        size={24}
                         color={cardColor}
                       />
                       <Text style={[styles.cardLabel, { color: cardColor }]}>
                         {card.label}
                       </Text>
                     </View>
-                    <Text style={[styles.cardContent, { 
-                      color: isDark ? '#FFFFFF' : colors.text 
-                    }]} numberOfLines={4}>
-                      {card.content}
-                    </Text>
-                    {isSelected && (
+                    
+                    {/* Multiple Choice Options */}
+                    <View style={styles.optionsContainer}>
+                      <Text style={[styles.optionsTitle, { 
+                        color: isDark ? '#FFFFFF' : colors.text 
+                      }]}>
+                        Choisissez la bonne réponse:
+                      </Text>
+                      {card.options.map((option, optionIndex) => {
+                        const isOptionSelected = selectedOption?.id === option.id && isSelected;
+                        return (
+                          <TouchableOpacity
+                            key={option.id}
+                            style={[
+                              styles.optionButton,
+                              {
+                                backgroundColor: isOptionSelected 
+                                  ? cardColor + '20'
+                                  : isDark ? colors.darkBackground : colors.background,
+                                borderColor: isOptionSelected ? cardColor : colors.border,
+                                borderWidth: isOptionSelected ? 2 : 1,
+                              }
+                            ]}
+                            onPress={() => {
+                              if (isSelected) {
+                                handleOptionSelect(option);
+                              }
+                            }}
+                            disabled={!isSelected}
+                          >
+                            <View style={styles.optionContent}>
+                              <View style={[styles.optionNumber, {
+                                backgroundColor: isOptionSelected ? cardColor : colors.textSecondary + '20',
+                              }]}>
+                                <Text style={[styles.optionNumberText, {
+                                  color: isOptionSelected ? '#FFFFFF' : colors.textSecondary,
+                                }]}>
+                                  {optionIndex + 1}
+                                </Text>
+                              </View>
+                              <Text 
+                                style={[
+                                  styles.optionText, 
+                                  { 
+                                    color: isOptionSelected 
+                                      ? cardColor 
+                                      : isDark ? '#FFFFFF' : colors.text 
+                                  }
+                                ]} 
+                                numberOfLines={3}
+                              >
+                                {option.content}
+                              </Text>
+                            </View>
+                            {isOptionSelected && (
+                              <IconSymbol
+                                ios_icon_name="checkmark.circle.fill"
+                                android_material_icon_name="check-circle"
+                                size={20}
+                                color={cardColor}
+                              />
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    
+                    {isSelected && selectedOption && (
                       <View style={[styles.selectedBadge, { backgroundColor: cardColor }]}>
                         <IconSymbol
                           ios_icon_name="hand.tap.fill"
@@ -536,7 +633,7 @@ export default function CardGameScreen() {
                           size={16}
                           color="#FFFFFF"
                         />
-                        <Text style={styles.selectedBadgeText}>Sélectionné</Text>
+                        <Text style={styles.selectedBadgeText}>Prêt à placer</Text>
                       </View>
                     )}
                   </Animated.View>
@@ -578,7 +675,7 @@ export default function CardGameScreen() {
               Vous avez complété toutes les caractéristiques de {currentMuscle.name} !
             </Text>
             
-            {/* Completed Muscle Image */}
+            {/* Completed Muscle Image - Fully drawn */}
             <View style={[styles.completedMuscleCard, {
               backgroundColor: isDark ? colors.darkBackground : colors.background,
             }]}>
@@ -594,6 +691,9 @@ export default function CardGameScreen() {
                   size={48}
                   color={colors.success}
                 />
+                <Text style={styles.completedMuscleText}>
+                  Muscle complet !
+                </Text>
               </View>
             </View>
             
@@ -808,9 +908,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   placedCardIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -819,11 +919,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptySlotIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2,
-    borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -858,7 +957,7 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   answerCard: {
-    width: CARD_WIDTH * 0.75,
+    width: CARD_WIDTH * 0.85,
     borderRadius: 16,
     overflow: 'hidden',
     elevation: 4,
@@ -871,14 +970,48 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardLabel: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
-  cardContent: {
+  optionsContainer: {
     padding: 16,
+    gap: 12,
+  },
+  optionsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  optionContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  optionNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionNumberText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  optionText: {
+    flex: 1,
     fontSize: 13,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   selectedBadge: {
     position: 'absolute',
@@ -950,6 +1083,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(76, 175, 80, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+  },
+  completedMuscleText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
   },
   modalButton: {
     width: '100%',

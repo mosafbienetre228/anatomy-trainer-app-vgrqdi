@@ -1,280 +1,420 @@
 
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { router } from 'expo-router';
-import { useTheme } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors, commonStyles } from '@/styles/commonStyles';
 import { shoulderMuscles } from '@/data/shoulderMuscles';
+import { colors, commonStyles } from '@/styles/commonStyles';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { useTheme } from '@react-navigation/native';
+import { IconSymbol } from '@/components/IconSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
+import * as Haptics from 'expo-haptics';
 
 export default function MuscleListScreen() {
-  console.log('MuscleListScreen: Rendering');
-  
   const theme = useTheme();
-  console.log('MuscleListScreen: Theme loaded', theme?.colors?.background);
-  
   const { t } = useLanguage();
-  console.log('MuscleListScreen: Language context loaded');
+  const isDark = theme.dark;
 
-  console.log('MuscleListScreen: Shoulder muscles count:', shoulderMuscles?.length);
+  const handleMusclePress = (muscleId: string) => {
+    console.log('Muscle pressed:', muscleId);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    router.push({
+      pathname: '/muscle-detail',
+      params: { id: muscleId },
+    });
+  };
 
-  if (!shoulderMuscles || shoulderMuscles.length === 0) {
-    console.error('MuscleListScreen: No shoulder muscles data available');
-    return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
-        <View style={styles.errorContainer}>
-          <Text style={[commonStyles.subtitle, { color: theme.colors.text }]}>
-            Erreur: Données non disponibles
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const handleStartGame = () => {
+    console.log('Starting card game...');
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    }
+    router.push('/card-game');
+  };
+
+  // Categorize muscles by type for better organization
+  const muscleCategories = {
+    rotatorCuff: ['supraspinatus', 'infraspinatus', 'teres-minor', 'subscapularis'],
+    superficial: ['deltoid', 'trapezius', 'latissimus-dorsi'],
+    pectoral: ['pectoralis-major', 'pectoralis-minor'],
+    scapular: ['serratus-anterior', 'levator-scapulae', 'rhomboid-major', 'rhomboid-minor'],
+    other: ['teres-major', 'coracobrachialis'],
+  };
+
+  const categoryInfo = {
+    rotatorCuff: {
+      name: 'Coiffe des rotateurs',
+      icon: { ios: 'arrow.triangle.2.circlepath', android: 'sync' },
+      color: colors.cardBlue,
+    },
+    superficial: {
+      name: 'Muscles superficiels',
+      icon: { ios: 'figure.arms.open', android: 'accessibility' },
+      color: colors.cardGreen,
+    },
+    pectoral: {
+      name: 'Muscles pectoraux',
+      icon: { ios: 'heart.fill', android: 'favorite' },
+      color: colors.cardOrange,
+    },
+    scapular: {
+      name: 'Muscles scapulaires',
+      icon: { ios: 'arrow.up.left.and.arrow.down.right', android: 'open-with' },
+      color: colors.cardPurple,
+    },
+    other: {
+      name: 'Autres muscles',
+      icon: { ios: 'star.fill', android: 'star' },
+      color: colors.cardYellow,
+    },
+  };
+
+  const getMuscleIcon = (muscleId: string) => {
+    // Return specific icons for each muscle
+    const icons: Record<string, { ios: string; android: string }> = {
+      'deltoid': { ios: 'triangle.fill', android: 'change-history' },
+      'supraspinatus': { ios: 'arrow.up.circle.fill', android: 'arrow-upward' },
+      'infraspinatus': { ios: 'arrow.down.circle.fill', android: 'arrow-downward' },
+      'teres-minor': { ios: 'smallcircle.filled.circle', android: 'fiber-manual-record' },
+      'subscapularis': { ios: 'arrow.left.circle.fill', android: 'arrow-back' },
+      'teres-major': { ios: 'largecircle.fill.circle', android: 'album' },
+      'latissimus-dorsi': { ios: 'rectangle.fill', android: 'crop-landscape' },
+      'pectoralis-major': { ios: 'heart.fill', android: 'favorite' },
+      'pectoralis-minor': { ios: 'heart', android: 'favorite-border' },
+      'serratus-anterior': { ios: 'line.3.horizontal', android: 'view-headline' },
+      'trapezius': { ios: 'triangle.fill', android: 'details' },
+      'levator-scapulae': { ios: 'arrow.up.square.fill', android: 'vertical-align-top' },
+      'rhomboid-major': { ios: 'rhombus.fill', android: 'crop-square' },
+      'rhomboid-minor': { ios: 'rhombus', android: 'crop-din' },
+      'coracobrachialis': { ios: 'arrow.right.circle.fill', android: 'arrow-forward' },
+    };
+    return icons[muscleId] || { ios: 'circle.fill', android: 'circle' };
+  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: theme.colors.background }]}>
-        <TouchableOpacity 
-          onPress={() => {
-            console.log('MuscleListScreen: Back button pressed');
-            router.back();
-          }}
-          style={styles.backButton}
-        >
+    <SafeAreaView style={[styles.container, { 
+      backgroundColor: isDark ? colors.darkBackground : colors.background 
+    }]}>
+      {/* Header */}
+      <View style={[styles.header, { 
+        backgroundColor: isDark ? colors.darkCard : colors.card 
+      }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <IconSymbol
             ios_icon_name="chevron.left"
             android_material_icon_name="arrow-back"
             size={24}
-            color={theme.colors.text}
+            color={isDark ? '#FFFFFF' : colors.text}
           />
         </TouchableOpacity>
-        <Text style={[commonStyles.subtitle, styles.headerTitle, { color: theme.colors.text }]}>
-          {t('shoulderMuscles')}
+        <Text style={[styles.headerTitle, { 
+          color: isDark ? '#FFFFFF' : colors.text 
+        }]}>
+          Muscles de l&apos;épaule
         </Text>
-        <View style={styles.placeholder} />
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        style={styles.container}
+      <ScrollView 
+        style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.infoCard, { backgroundColor: colors.primary + '15' }]}>
-          <IconSymbol
-            ios_icon_name="info.circle.fill"
-            android_material_icon_name="info"
-            size={24}
-            color={colors.primary}
-          />
-          <Text style={[commonStyles.textSecondary, styles.infoText]}>
-            {shoulderMuscles.length} muscles à découvrir dans cette région
-          </Text>
-        </View>
-
+        {/* Start Game Button */}
         <TouchableOpacity
-          style={[styles.gameButton, { backgroundColor: colors.secondary }]}
-          onPress={() => {
-            console.log('MuscleListScreen: Start game button pressed');
-            router.push('/card-game');
-          }}
+          style={[styles.startGameButton, {
+            backgroundColor: colors.primary,
+          }]}
+          onPress={handleStartGame}
           activeOpacity={0.8}
         >
-          <View style={styles.gameButtonContent}>
+          <View style={styles.startGameIcon}>
             <IconSymbol
-              ios_icon_name="gamecontroller.fill"
-              android_material_icon_name="sports-esports"
+              ios_icon_name="play.fill"
+              android_material_icon_name="play-arrow"
               size={32}
               color="#FFFFFF"
             />
-            <View style={styles.gameButtonText}>
-              <Text style={[commonStyles.subtitle, styles.gameButtonTitle]}>
-                {t('startGame')}
-              </Text>
-              <Text style={[commonStyles.textSecondary, styles.gameButtonSubtitle]}>
-                Apprenez avec les cartes interactives
-              </Text>
-            </View>
-            <IconSymbol
-              ios_icon_name="chevron.right"
-              android_material_icon_name="chevron-right"
-              size={24}
-              color="#FFFFFF"
-            />
           </View>
+          <View style={styles.startGameContent}>
+            <Text style={styles.startGameTitle}>
+              Commencer le jeu de cartes
+            </Text>
+            <Text style={styles.startGameSubtitle}>
+              Apprenez les {shoulderMuscles.length} muscles de l&apos;épaule
+            </Text>
+          </View>
+          <IconSymbol
+            ios_icon_name="chevron.right"
+            android_material_icon_name="chevron-right"
+            size={24}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
 
-        <View style={styles.divider}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <Text style={[commonStyles.textSecondary, styles.dividerText]}>
-            ou parcourez les muscles
-          </Text>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
+        {/* Muscle Categories */}
+        {Object.entries(muscleCategories).map(([categoryKey, muscleIds]) => {
+          const category = categoryInfo[categoryKey as keyof typeof categoryInfo];
+          const categoryMuscles = shoulderMuscles.filter(m => muscleIds.includes(m.id));
 
-        {shoulderMuscles.map((muscle, index) => {
-          if (!muscle || !muscle.id) {
-            console.error('MuscleListScreen: Invalid muscle data at index', index);
-            return null;
-          }
-          
           return (
-            <React.Fragment key={`muscle-${index}`}>
-              <TouchableOpacity
-                style={[styles.muscleCard, { backgroundColor: theme.colors.card }]}
-                onPress={() => {
-                  console.log('MuscleListScreen: Muscle card pressed:', muscle.id);
-                  router.push(`/muscle-detail?id=${muscle.id}` as any);
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.muscleIcon, { backgroundColor: colors.secondary + '20' }]}>
+            <View key={categoryKey} style={styles.categorySection}>
+              <View style={[styles.categoryHeader, {
+                backgroundColor: category.color + '20',
+              }]}>
+                <View style={[styles.categoryIconContainer, {
+                  backgroundColor: category.color,
+                }]}>
                   <IconSymbol
-                    ios_icon_name="figure.arms.open"
-                    android_material_icon_name="accessibility"
-                    size={28}
-                    color={colors.secondary}
+                    ios_icon_name={category.icon.ios}
+                    android_material_icon_name={category.icon.android}
+                    size={24}
+                    color="#FFFFFF"
                   />
                 </View>
-                <View style={styles.muscleContent}>
-                  <Text style={[commonStyles.subtitle, styles.muscleName, { color: theme.colors.text }]}>
-                    {muscle.name || 'Nom inconnu'}
-                  </Text>
-                  <Text style={[commonStyles.textSecondary, styles.muscleDefinition]} numberOfLines={2}>
-                    {muscle.definition || 'Définition non disponible'}
+                <Text style={[styles.categoryTitle, { color: category.color }]}>
+                  {category.name}
+                </Text>
+                <View style={[styles.categoryBadge, {
+                  backgroundColor: category.color,
+                }]}>
+                  <Text style={styles.categoryBadgeText}>
+                    {categoryMuscles.length}
                   </Text>
                 </View>
-                <IconSymbol
-                  ios_icon_name="chevron.right"
-                  android_material_icon_name="chevron-right"
-                  size={24}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </React.Fragment>
+              </View>
+
+              <View style={styles.musclesList}>
+                {categoryMuscles.map((muscle, index) => {
+                  const muscleIcon = getMuscleIcon(muscle.id);
+                  return (
+                    <TouchableOpacity
+                      key={muscle.id}
+                      style={[styles.muscleCard, {
+                        backgroundColor: isDark ? colors.darkCard : colors.card,
+                        borderLeftColor: category.color,
+                        borderLeftWidth: 4,
+                      }]}
+                      onPress={() => handleMusclePress(muscle.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.muscleIconContainer, {
+                        backgroundColor: category.color + '20',
+                      }]}>
+                        <IconSymbol
+                          ios_icon_name={muscleIcon.ios}
+                          android_material_icon_name={muscleIcon.android}
+                          size={28}
+                          color={category.color}
+                        />
+                      </View>
+                      <View style={styles.muscleInfo}>
+                        <Text style={[styles.muscleName, { 
+                          color: isDark ? '#FFFFFF' : colors.text 
+                        }]}>
+                          {muscle.name}
+                        </Text>
+                        <Text style={[styles.muscleDefinition, { 
+                          color: colors.textSecondary 
+                        }]} numberOfLines={2}>
+                          {muscle.definition}
+                        </Text>
+                      </View>
+                      <IconSymbol
+                        ios_icon_name="chevron.right"
+                        android_material_icon_name="chevron-right"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
           );
         })}
+
+        {/* Summary Card */}
+        <View style={[styles.summaryCard, {
+          backgroundColor: isDark ? colors.darkCard : colors.card,
+        }]}>
+          <View style={[styles.summaryIcon, {
+            backgroundColor: colors.primary + '20',
+          }]}>
+            <IconSymbol
+              ios_icon_name="info.circle.fill"
+              android_material_icon_name="info"
+              size={32}
+              color={colors.primary}
+            />
+          </View>
+          <Text style={[styles.summaryTitle, { 
+            color: isDark ? '#FFFFFF' : colors.text 
+          }]}>
+            Total: {shoulderMuscles.length} muscles
+          </Text>
+          <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
+            L&apos;épaule est une articulation complexe composée de plusieurs groupes musculaires 
+            qui travaillent ensemble pour permettre une grande amplitude de mouvement.
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    padding: 16,
     paddingTop: Platform.OS === 'android' ? 48 : 16,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 4,
   },
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    marginBottom: 0,
+    fontSize: 20,
+    fontWeight: '700',
   },
-  placeholder: {
-    width: 40,
-  },
-  container: {
+  content: {
     flex: 1,
   },
   contentContainer: {
     padding: 20,
-    gap: 12,
     paddingBottom: 40,
   },
-  infoCard: {
+  startGameButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    marginBottom: 8,
-  },
-  infoText: {
-    flex: 1,
-  },
-  gameButton: {
-    borderRadius: 16,
     padding: 20,
-    marginBottom: 8,
-    boxShadow: '0px 4px 16px rgba(255, 87, 34, 0.3)',
-    elevation: 6,
-  },
-  gameButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderRadius: 16,
+    marginBottom: 24,
     gap: 16,
+    boxShadow: '0px 8px 24px rgba(3, 169, 244, 0.3)',
+    elevation: 8,
   },
-  gameButtonText: {
+  startGameIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  startGameContent: {
     flex: 1,
     gap: 4,
   },
-  gameButtonTitle: {
+  startGameTitle: {
+    fontSize: 18,
+    fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 0,
-    fontSize: 20,
   },
-  gameButtonSubtitle: {
-    color: '#FFFFFF',
-    opacity: 0.9,
-    fontSize: 13,
+  startGameSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
   },
-  divider: {
+  categorySection: {
+    marginBottom: 24,
+  },
+  categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 16,
+    padding: 12,
+    borderRadius: 12,
     gap: 12,
+    marginBottom: 12,
   },
-  dividerLine: {
+  categoryIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryTitle: {
     flex: 1,
-    height: 1,
+    fontSize: 18,
+    fontWeight: '700',
   },
-  dividerText: {
-    fontSize: 12,
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  categoryBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  musclesList: {
+    gap: 12,
   },
   muscleCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderRadius: 12,
-    gap: 16,
-    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
+    gap: 12,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.08)',
+    elevation: 2,
   },
-  muscleIcon: {
+  muscleIconContainer: {
     width: 56,
     height: 56,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  muscleContent: {
+  muscleInfo: {
     flex: 1,
     gap: 4,
   },
   muscleName: {
-    marginBottom: 0,
-    fontSize: 18,
+    fontSize: 16,
+    fontWeight: '700',
   },
   muscleDefinition: {
     fontSize: 13,
+    lineHeight: 18,
   },
-  errorContainer: {
-    flex: 1,
+  summaryCard: {
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.08)',
+    elevation: 4,
+  },
+  summaryIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+  },
+  summaryTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  summaryText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
   },
 });
