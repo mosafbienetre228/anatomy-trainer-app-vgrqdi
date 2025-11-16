@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -14,15 +14,15 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SupabaseProvider } from "@/contexts/SupabaseContext";
 import { useNetworkState } from "expo-network";
 import * as SplashScreen from "expo-splash-screen";
-import { useColorScheme } from "react-native";
+import { useColorScheme, View, Text, ActivityIndicator } from "react-native";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { colors } from "@/styles/commonStyles";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Prevent the splash screen from auto-hiding
-SplashScreen.preventAutoHideAsync().catch(() => {
-  console.log('Splash screen already hidden');
+SplashScreen.preventAutoHideAsync().catch((error) => {
+  console.log('Splash screen already hidden or error:', error);
 });
 
 const CustomLightTheme: Theme = {
@@ -52,8 +52,12 @@ const CustomDarkTheme: Theme = {
 };
 
 export default function RootLayout() {
+  console.log('RootLayout: Starting initialization');
+  
   const { isConnected } = useNetworkState();
   const colorScheme = useColorScheme();
+  const [appReady, setAppReady] = useState(false);
+  
   const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -61,35 +65,51 @@ export default function RootLayout() {
   useEffect(() => {
     if (error) {
       console.error('Font loading error:', error);
+      // Continue anyway - don't block the app
+      setAppReady(true);
     }
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync().catch(() => {
-        console.log('Error hiding splash screen');
-      });
+    if (loaded || error) {
+      console.log('Fonts loaded or error occurred, hiding splash screen');
+      setTimeout(() => {
+        SplashScreen.hideAsync().catch((err) => {
+          console.log('Error hiding splash screen:', err);
+        });
+        setAppReady(true);
+      }, 100);
     }
-  }, [loaded]);
+  }, [loaded, error]);
 
   useEffect(() => {
     if (isConnected === false) {
-      console.log('No internet connection');
+      console.log('No internet connection detected');
+    } else if (isConnected === true) {
+      console.log('Internet connection available');
     }
   }, [isConnected]);
 
-  if (!loaded) {
-    return null;
+  // Show loading screen while fonts are loading
+  if (!appReady) {
+    console.log('App not ready yet, showing loading screen');
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 16, color: colors.text }}>Chargement...</Text>
+      </View>
+    );
   }
 
+  console.log('App ready, rendering main layout');
   const theme = colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme;
 
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <ThemeProvider value={theme}>
-          <SupabaseProvider>
-            <LanguageProvider>
+          <LanguageProvider>
+            <SupabaseProvider>
               <WidgetProvider>
                 <SystemBars style="auto" />
                 <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
@@ -170,8 +190,8 @@ export default function RootLayout() {
                   />
                 </Stack>
               </WidgetProvider>
-            </LanguageProvider>
-          </SupabaseProvider>
+            </SupabaseProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>

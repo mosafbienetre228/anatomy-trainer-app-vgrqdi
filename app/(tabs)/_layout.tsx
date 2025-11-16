@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { Stack } from 'expo-router';
-import { Platform } from 'react-native';
 import FloatingTabBar, { TabBarItem } from '@/components/FloatingTabBar';
 
 export default function TabLayout() {
+  console.log('TabLayout: Rendering');
+  
   const tabs: TabBarItem[] = [
     {
       name: '(home)',

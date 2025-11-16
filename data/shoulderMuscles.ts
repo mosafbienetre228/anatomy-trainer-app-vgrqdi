@@ -199,4 +199,4 @@ export const shoulderMuscles: Muscle[] = [
   },
 ];
 
-console.log('shoulderMuscles.ts: Exported', shoulderMuscles.length, 'muscles');
+console.log('shoulderMuscles.ts: Module loaded with', shoulderMuscles.length, 'muscles');

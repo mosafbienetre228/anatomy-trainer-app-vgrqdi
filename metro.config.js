@@ -3,19 +3,18 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// Optimize Metro for faster builds
+// Optimize Metro for faster builds and better error handling
 config.resolver = {
   ...config.resolver,
   sourceExts: [...(config.resolver?.sourceExts || []), 'mjs', 'cjs'],
 };
 
-// Optimize transformer for production builds
+// Optimize transformer
 config.transformer = {
   ...config.transformer,
   minifierPath: require.resolve('metro-minify-terser'),
   minifierConfig: {
     compress: {
-      // Drop console logs in production
       drop_console: false,
     },
     mangle: {
@@ -27,12 +26,10 @@ config.transformer = {
   },
 };
 
-// Enable caching for faster rebuilds
-config.cacheStores = [
-  {
-    get: async () => null,
-    set: async () => {},
-  },
-];
+// Enable source maps for better debugging
+config.serializer = {
+  ...config.serializer,
+  customSerializer: undefined, // Remove any custom serializer that might cause issues
+};
 
 module.exports = config;

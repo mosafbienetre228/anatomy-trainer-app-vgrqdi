@@ -24,7 +24,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    console.error('ErrorBoundary: Caught error:', error);
+    console.error('ErrorBoundary: Caught error', error);
     return {
       hasError: true,
       error,
@@ -33,9 +33,9 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary: Error details:', {
+    console.error('ErrorBoundary: Error details', {
       error: error.toString(),
-      componentStack: errorInfo.componentStack,
+      errorInfo: errorInfo.componentStack,
     });
     
     this.setState({
@@ -57,32 +57,37 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-            <Text style={styles.title}>Oops! Something went wrong</Text>
-            <Text style={styles.message}>
-              The app encountered an unexpected error. Please try again.
+          <View style={styles.content}>
+            <Text style={styles.title}>Oups ! Une erreur est survenue</Text>
+            <Text style={styles.subtitle}>
+              L&apos;application a rencontré un problème inattendu.
             </Text>
             
-            {this.state.error && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorTitle}>Error Details:</Text>
-                <Text style={styles.errorText}>{this.state.error.toString()}</Text>
-              </View>
-            )}
-            
-            {this.state.errorInfo && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorTitle}>Component Stack:</Text>
-                <Text style={styles.errorText}>
-                  {this.state.errorInfo.componentStack}
-                </Text>
-              </View>
-            )}
-            
-            <TouchableOpacity style={styles.button} onPress={this.handleReset}>
-              <Text style={styles.buttonText}>Try Again</Text>
+            <ScrollView style={styles.errorContainer}>
+              <Text style={styles.errorTitle}>Détails de l&apos;erreur :</Text>
+              <Text style={styles.errorText}>
+                {this.state.error?.toString() || 'Erreur inconnue'}
+              </Text>
+              
+              {this.state.errorInfo && (
+                <>
+                  <Text style={[styles.errorTitle, { marginTop: 16 }]}>
+                    Stack trace :
+                  </Text>
+                  <Text style={styles.errorText}>
+                    {this.state.errorInfo.componentStack}
+                  </Text>
+                </>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={this.handleReset}
+            >
+              <Text style={styles.buttonText}>Réessayer</Text>
             </TouchableOpacity>
-          </ScrollView>
+          </View>
         </View>
       );
     }
@@ -95,35 +100,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   content: {
-    padding: 20,
-    paddingTop: 60,
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 24,
+    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.1)',
+    elevation: 5,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 16,
+    color: colors.error,
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  message: {
+  subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
     marginBottom: 24,
+    textAlign: 'center',
     lineHeight: 24,
   },
   errorContainer: {
-    backgroundColor: 'rgba(255, 0, 0, 0.1)',
-    padding: 16,
+    backgroundColor: '#f5f5f5',
     borderRadius: 8,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 24,
+    maxHeight: 300,
   },
   errorTitle: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: colors.text,
     marginBottom: 8,
   },
@@ -131,13 +144,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     fontFamily: 'monospace',
+    lineHeight: 18,
   },
   button: {
     backgroundColor: colors.primary,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 24,
+    justifyContent: 'center',
   },
   buttonText: {
     color: '#ffffff',
